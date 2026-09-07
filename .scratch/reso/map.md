@@ -14,6 +14,7 @@ A written v1 spec for Reso — the monthly restaurant-draw site for one London f
 - Skills every session should consult: `/grilling` and `/domain-modeling` for grilling tickets; `/prototype` for the look-and-feel ticket; `/research` for research tickets. Vercel plugin skills (`vercel:nextjs`, `vercel:vercel-storage`, `vercel:vercel-functions`) when a decision touches the platform.
 - Standing preferences: everything must be free to run (Vercel Hobby, free-tier database). Mobile-first; installed to the iPhone home screen. Keep it simple — no merging of duplicate restaurants, no filtering of the draw, no bulk import.
 - The human driving this map is Jada (repo owner, sole Admin to start).
+- Implementation has begun ahead of the spec, at Jada's request: the foundation (schema, identity, cycle engine, Maps parsing, PWA/push, daily cron) is built and pushed. Screens are placeholders pending ticket 06 and no message wording exists pending ticket 05. Ticket 07's repo-layout half was decided in code; its spec half is still open. See README.md.
 
 ## Decisions so far
 
