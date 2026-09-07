@@ -62,7 +62,7 @@ export default async function GroupHome({
       >
         {/* No heading: the ticket carries the month, and printing it twice above
             its own stamp is the sort of thing that makes a screen feel generated. */}
-        <Reveal data={reveal} isAdmin={Boolean(admin)} />
+        <Reveal data={reveal} outingId={settled.id} isAdmin={Boolean(admin)} />
         {askForRating && reveal.place ? (
           <Rate
             secret={secret}

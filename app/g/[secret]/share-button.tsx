@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 
+import { markShared } from "./share-actions";
+
 import styles from "./reveal.module.css";
 
 /**
@@ -13,7 +15,13 @@ import styles from "./reveal.module.css";
  * So the site writes the message and a human forwards it: Share opens the iOS
  * share sheet, they pick the group, they send. Two taps, no API, no ban risk.
  */
-export function ShareButton({ text }: { text: string }) {
+export function ShareButton({
+  text,
+  outingId,
+}: {
+  text: string;
+  outingId: string;
+}) {
   const [state, setState] = useState<"idle" | "copied" | "failed">("idle");
 
   async function send() {
@@ -21,6 +29,7 @@ export function ShareButton({ text }: { text: string }) {
     if (typeof navigator !== "undefined" && navigator.share) {
       try {
         await navigator.share({ text });
+        await markShared(outingId);
         return;
       } catch {
         // A cancelled share sheet lands here too, so fall through quietly to copy.
@@ -28,6 +37,7 @@ export function ShareButton({ text }: { text: string }) {
     }
     try {
       await navigator.clipboard.writeText(text);
+      await markShared(outingId);
       setState("copied");
     } catch {
       setState("failed");

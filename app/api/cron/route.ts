@@ -8,6 +8,7 @@ import {
   markPastOutingsDone,
 } from "@/lib/cycle/close";
 import { todayInLondon } from "@/lib/cycle/dates";
+import { sendDueMessages } from "@/lib/cycle/messages";
 
 /**
  * The daily job.
@@ -18,9 +19,9 @@ import { todayInLondon } from "@/lib/cycle/dates";
  * is closed because its Close Day has passed and it is still open, never because
  * the job happens to be running on the 15th.
  *
- * Sending the reminder and announcement messages belongs here too, but the message
- * calendar and wording are still an open decision (wayfinder ticket 05), so this
- * job currently only advances the cycle.
+ * Messages go out after the cycle has advanced, so an Outing that closes on this
+ * run is announced on the same run rather than a day later. Each kind is claimed in
+ * `sent_messages` before it is sent, so a double-firing cron cannot double-send.
  */
 export async function GET(request: Request) {
   if (!isAuthorised(request)) {
@@ -33,7 +34,16 @@ export async function GET(request: Request) {
   const closed = await closeDueOutings(today);
   const completed = await markPastOutingsDone(today);
 
-  return NextResponse.json({ today, openedMonth, closed, completed });
+  // Never let a failed push stop the cycle: the state above is already committed,
+  // and a Member who missed a notification still sees the right thing on opening.
+  let messages: Awaited<ReturnType<typeof sendDueMessages>> = [];
+  try {
+    messages = await sendDueMessages(today);
+  } catch (error) {
+    console.error("[cron] messages failed", error);
+  }
+
+  return NextResponse.json({ today, openedMonth, closed, completed, messages });
 }
 
 function isAuthorised(request: Request): boolean {

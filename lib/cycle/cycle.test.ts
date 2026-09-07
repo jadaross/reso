@@ -14,6 +14,7 @@ import {
   weekdayOf,
 } from "./dates";
 import { drawFrom, randomIndex } from "./draw";
+import { copyFor } from "./messages";
 import { tierForMonth, tierForSequence } from "./tier";
 
 describe("dates", () => {
@@ -247,5 +248,41 @@ describe("the announcement", () => {
       announcementText({ ...base, chosenDate: null }),
       /nobody put any dates in/,
     );
+  });
+});
+
+describe("message wording", () => {
+  const facts = {
+    month: "2026-10-01",
+    place: "Mangal 2",
+    answered: 4,
+    total: 6,
+    announcement: "October: Mangal 2 — Friday 16 October. 6 of us. Still needs booking.",
+  };
+
+  it("tells the group a month has opened, without saying how", () => {
+    const copy = copyFor("opened", facts);
+    assert.equal(copy.title, "October is open");
+    assert.match(copy.body, /Tap the evenings/);
+  });
+
+  it("nudges the silent with the count of who is already in", () => {
+    assert.match(copyFor("last-call", facts).body, /4 of 6 are in/);
+  });
+
+  it("uses the one announcement text for the announcement and the day before", () => {
+    assert.equal(copyFor("announced", facts).body, facts.announcement);
+    assert.equal(copyFor("day-before", facts).body, facts.announcement);
+  });
+
+  it("names the place when asking for a rating", () => {
+    assert.match(copyFor("rate", facts).title, /How was Mangal 2\?/);
+  });
+
+  it("does not print null when nothing was drawn", () => {
+    for (const kind of ["day-before", "rate"] as const) {
+      const copy = copyFor(kind, { ...facts, place: null });
+      assert.doesNotMatch(`${copy.title} ${copy.body}`, /null|undefined/);
+    }
   });
 });

@@ -20,9 +20,11 @@ const TIER_LABEL = { low: "Low", medium: "Medium", high: "High" } as const;
  */
 export function Reveal({
   data,
+  outingId,
   isAdmin,
 }: {
   data: RevealData;
+  outingId: string;
   isAdmin: boolean;
 }) {
   const text = announcementText({
@@ -84,7 +86,7 @@ export function Reveal({
         </div>
       </div>
 
-      <ShareButton text={text} />
+      <ShareButton text={text} outingId={outingId} />
 
       <p className={styles.why}>
         {data.tickets > 1
