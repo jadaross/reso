@@ -1,0 +1,116 @@
+.page {
+  min-height: 100dvh;
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 40px var(--gutter) calc(48px + env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+}
+
+.hello {
+  color: var(--muted);
+  margin: 0;
+}
+
+.title {
+  font-size: var(--step-4);
+  margin: 10px 0 14px;
+}
+
+.lede {
+  color: var(--muted);
+  max-width: var(--measure);
+  margin: 0 0 28px;
+}
+
+/* Numbered because these genuinely are a sequence, and the order is forced by iOS. */
+.steps {
+  list-style: none;
+  counter-reset: step;
+  margin: 0;
+  padding: 0;
+}
+
+.steps li {
+  counter-increment: step;
+  position: relative;
+  padding: 0 0 22px 44px;
+  color: var(--muted);
+  max-width: var(--measure);
+}
+
+.steps li::before {
+  content: counter(step);
+  position: absolute;
+  left: 0;
+  top: -2px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--amber);
+  color: var(--bone-ink);
+  font-family: var(--font-bricolage), sans-serif;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+}
+
+/* The rail linking the steps, so they read as one run rather than three notes. */
+.steps li:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  left: 13px;
+  top: 30px;
+  bottom: 6px;
+  width: 2px;
+  background: var(--hairline-strong);
+}
+
+.steps strong {
+  color: var(--bone);
+  font-weight: 600;
+}
+
+.aside {
+  border-left: 2px solid var(--hairline-strong);
+  padding-left: 14px;
+  color: var(--muted);
+  font-size: var(--step--1);
+  line-height: 1.6;
+  max-width: var(--measure);
+  margin: 6px 0 0;
+}
+
+.primary {
+  display: block;
+  width: 100%;
+  text-align: center;
+  text-decoration: none;
+  background: var(--amber);
+  color: var(--bone-ink);
+  border: none;
+  border-radius: var(--radius);
+  padding: 17px;
+  font-size: var(--step-1);
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 4px;
+}
+
+.primary:disabled {
+  opacity: 0.65;
+  cursor: default;
+}
+
+.skip {
+  display: inline-block;
+  margin-top: 26px;
+  color: var(--muted);
+  font-size: var(--step--1);
+}
+
+.error {
+  color: var(--amber);
+  font-size: var(--step--1);
+  margin: 12px 0 0;
+}

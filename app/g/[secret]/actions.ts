@@ -2,6 +2,7 @@
 
 import { and, eq, isNull } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 
 import { getDb } from "@/lib/db";
 import { members } from "@/lib/db/schema";
@@ -56,7 +57,11 @@ export async function switchName(secret: string): Promise<ActionResult> {
 export async function claimNameForm(formData: FormData): Promise<void> {
   const secret = String(formData.get("secret") ?? "");
   const memberId = String(formData.get("memberId") ?? "");
-  await claimName(secret, memberId);
+  const result = await claimName(secret, memberId);
+  // Straight to setup, because the reminders are the point and they need two
+  // things done on the phone first. It shows what is actually left to do, so
+  // someone who is already set up passes through it in one tap.
+  if (result.ok) redirect(`/g/${secret}/start`);
 }
 
 export async function switchNameForm(formData: FormData): Promise<void> {

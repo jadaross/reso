@@ -1,6 +1,6 @@
 import { asc, isNull } from "drizzle-orm";
 
-import { EnablePush } from "@/components/enable-push";
+import { FinishSetup } from "@/components/finish-setup";
 import { monthName } from "@/lib/cycle/announcement";
 import {
   didAttend,
@@ -71,6 +71,7 @@ export default async function GroupHome({
             existing={existing}
           />
         ) : null}
+        <FinishSetup secret={secret} />
       </Shell>
     );
   }
@@ -100,7 +101,7 @@ export default async function GroupHome({
       />
 
       <p className={styles.standing}>{standing(view)}</p>
-      <EnablePush />
+      <FinishSetup secret={secret} />
     </Shell>
   );
 }
