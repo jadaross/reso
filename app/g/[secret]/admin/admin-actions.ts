@@ -13,8 +13,10 @@ import {
   members,
   outings,
   picks,
+  pushSubscriptions,
   type PriceTier,
 } from "@/lib/db/schema";
+import { sendToSubscriptions } from "@/lib/push/send";
 import { requireAdmin } from "@/lib/identity/guard";
 import { generateGroupSecret } from "@/lib/identity/token";
 import { groupSecrets } from "@/lib/db/schema";
@@ -293,4 +295,55 @@ export async function roster() {
     .from(members)
     .where(isNull(members.archivedAt))
     .orderBy(asc(members.name));
+}
+
+/**
+ * Send a notification to your own phones, and nobody else's.
+ *
+ * Web Push only works from the installed Home Screen app, and the only way to know
+ * it really works is to make one arrive. Scoped to the Admin's own Devices so that
+ * testing it never wakes the group.
+ */
+export async function sendTestPush(secret: string): Promise<AdminResult> {
+  const admin = await requireAdmin();
+
+  const devices = await getDb()
+    .select({
+      id: pushSubscriptions.id,
+      endpoint: pushSubscriptions.endpoint,
+      p256dh: pushSubscriptions.p256dh,
+      auth: pushSubscriptions.auth,
+    })
+    .from(pushSubscriptions)
+    .where(eq(pushSubscriptions.memberId, admin.id));
+
+  if (devices.length === 0) {
+    return {
+      ok: false,
+      error:
+        "No phone has turned notifications on yet. Open Reso from the Home Screen and allow them.",
+    };
+  }
+
+  const { sent, removed } = await sendToSubscriptions(devices, {
+    title: "Reso works",
+    body: "This is the notification you'll get when a month opens.",
+    url: `/g/${secret}`,
+    tag: "test",
+  });
+
+  if (sent === 0) {
+    return {
+      ok: false,
+      error:
+        removed > 0
+          ? "That phone's subscription had expired, so it has been cleared. Turn notifications on again."
+          : "Apple refused it. Nothing was delivered.",
+    };
+  }
+
+  return {
+    ok: true,
+    note: `Sent to ${sent} ${sent === 1 ? "device" : "devices"}. It should arrive within a few seconds.`,
+  };
 }

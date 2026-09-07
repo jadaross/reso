@@ -12,6 +12,7 @@ import {
   overrideTier,
   reroll,
   rotateGroupLink,
+  sendTestPush,
   type AdminResult,
 } from "./admin-actions";
 import styles from "./admin.module.css";
@@ -191,6 +192,23 @@ export function Panel({ secret, people, outing, topDays, emptyTier }: PanelProps
           </div>
         </section>
       ) : null}
+
+      <section className={styles.section}>
+        <h2 className={styles.heading}>Notifications</h2>
+        <p className={styles.hint}>
+          Goes to your phones only, so you can check they arrive without waking
+          anyone else.
+        </p>
+        <div className={styles.buttons}>
+          <button
+            type="button"
+            disabled={pending}
+            onClick={() => run(() => sendTestPush(secret))}
+          >
+            Send myself a test
+          </button>
+        </div>
+      </section>
 
       <section className={styles.section}>
         <h2 className={styles.heading}>The link</h2>
