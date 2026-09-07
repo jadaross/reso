@@ -1,7 +1,14 @@
 import { and, asc, eq, isNull, lt, sql } from "drizzle-orm";
 
 import { getDb } from "@/lib/db";
-import { availability, draws, members, outings, picks } from "@/lib/db/schema";
+import {
+  attendance,
+  availability,
+  draws,
+  members,
+  outings,
+  picks,
+} from "@/lib/db/schema";
 
 import { computeChosenDate } from "./chosen-date";
 import {
@@ -116,6 +123,25 @@ export async function closeDueOutings(
         isReroll: false,
         candidateCount: candidates.length,
       });
+    }
+
+    // Who came is fixed here, not derived on the way out.
+    //
+    // Availability stays editable in principle and a Member can be archived later,
+    // so reading "who was free on the Chosen Date" months afterwards would let the
+    // record of a dinner quietly rewrite itself. The Admin can correct this list
+    // until the Visit has been rated.
+    if (chosen.chosenDate) {
+      const going = tapped
+        .filter((row) => row.day === chosen.chosenDate)
+        .map((row) => row.memberId);
+
+      if (going.length > 0) {
+        await db
+          .insert(attendance)
+          .values(going.map((memberId) => ({ outingId: outing.id, memberId })))
+          .onConflictDoNothing();
+      }
     }
 
     results.push({

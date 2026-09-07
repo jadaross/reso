@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
+import { announcementText } from "./announcement";
 import { computeChosenDate } from "./chosen-date";
 import {
   addMonths,
@@ -205,5 +206,46 @@ describe("the calendar grid", () => {
   it("handles a February that starts on a Monday with no padding at the front", () => {
     // 1 February 2027 is a Monday.
     assert.equal(calendarGrid("2027-02-01")[0], "2027-02-01");
+  });
+});
+
+describe("the announcement", () => {
+  const base = {
+    month: "2026-10-01",
+    chosenDate: "2026-10-16",
+    place: "Mangal 2",
+    area: "Dalston",
+    tier: "low" as const,
+    going: 6,
+    plusOnes: 0,
+    tickets: 2,
+  };
+
+  it("names the place, the day and the headcount", () => {
+    assert.equal(
+      announcementText(base),
+      "October: Mangal 2, Dalston — Friday 16 October. 6 of us. Still needs booking.",
+    );
+  });
+
+  it("counts guests into the headcount and says so", () => {
+    assert.match(announcementText({ ...base, plusOnes: 2 }), /8 of us, including 2 guests/);
+  });
+
+  it("says a single guest in the singular", () => {
+    assert.match(announcementText({ ...base, plusOnes: 1 }), /7 of us, including 1 guest/);
+  });
+
+  it("explains an empty tier rather than naming no restaurant", () => {
+    const text = announcementText({ ...base, place: null, area: null });
+    assert.match(text, /nothing in the low list to draw from/);
+    assert.doesNotMatch(text, /null/);
+  });
+
+  it("says plainly when nobody gave any dates", () => {
+    assert.match(
+      announcementText({ ...base, chosenDate: null }),
+      /nobody put any dates in/,
+    );
   });
 });

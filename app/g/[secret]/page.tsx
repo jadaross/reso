@@ -1,13 +1,20 @@
 import { asc, isNull } from "drizzle-orm";
 
 import { EnablePush } from "@/components/enable-push";
-import { loadMonthView, openOuting } from "@/lib/cycle/month-view";
+import { monthName } from "@/lib/cycle/announcement";
+import {
+  latestSettledOuting,
+  loadMonthView,
+  loadReveal,
+  openOuting,
+} from "@/lib/cycle/month-view";
 import { getDb } from "@/lib/db";
 import { members, type Member } from "@/lib/db/schema";
-import { currentMember } from "@/lib/identity/guard";
+import { currentAdmin, currentMember } from "@/lib/identity/guard";
 
 import { claimNameForm } from "./actions";
 import { Calendar } from "./calendar";
+import { Reveal } from "./reveal";
 import styles from "./page.module.css";
 import { BareShell, Shell } from "./shell";
 
@@ -24,7 +31,28 @@ export default async function GroupHome({
   if (!member) return <PickYourName secret={secret} />;
 
   const outing = await openOuting();
-  if (!outing) return <BetweenMonths secret={secret} member={member} />;
+
+  // Nothing taking Availability: show the month that has already been settled,
+  // which is what people open the app for between the 15th and the dinner.
+  if (!outing) {
+    const settled = await latestSettledOuting();
+    if (!settled) return <BetweenMonths secret={secret} member={member} />;
+
+    const reveal = await loadReveal(settled);
+    const admin = await currentAdmin();
+    return (
+      <Shell
+        secret={secret}
+        member={member}
+        section="month"
+        eyebrow={`${TIER_LABEL[settled.tier]} month`}
+      >
+        {/* No heading: the ticket carries the month, and printing it twice above
+            its own stamp is the sort of thing that makes a screen feel generated. */}
+        <Reveal data={reveal} isAdmin={Boolean(admin)} />
+      </Shell>
+    );
+  }
 
   const view = await loadMonthView(outing, member.id);
 
@@ -71,14 +99,6 @@ function standing(view: Awaited<ReturnType<typeof loadMonthView>>): string {
   return `${readableDay(leader.day)} leads with ${leader.count} of ${
     view.memberCount
   }. ${waiting}`;
-}
-
-function monthName(month: string): string {
-  return new Date(`${month}T00:00:00Z`).toLocaleDateString("en-GB", {
-    month: "long",
-    year: "numeric",
-    timeZone: "UTC",
-  });
 }
 
 function readableDay(day: string): string {

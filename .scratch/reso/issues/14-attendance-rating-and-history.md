@@ -5,9 +5,9 @@ and the group has a record of everywhere it has been.
 
 **Blocked by:** 09, 13
 
-**Status:** ready-for-agent
+**Status:** claimed
 
-- [ ] Attendance rows are written when the Outing closes, from Availability on the Chosen Date plus Plus-ones, so that later edits cannot rewrite who came
+- [x] Attendance rows are written when the Outing closes, from Availability on the Chosen Date plus Plus-ones, so that later edits cannot rewrite who came — done early, in ticket 13, because the reveal's headcount depended on it
 - [ ] The Admin can correct attendance until the Visit has been rated
 - [ ] A done Outing prompts each attendee for a rating out of five and an optional short note
 - [ ] A Member who has rated sees the result instead of the prompt

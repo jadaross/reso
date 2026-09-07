@@ -1,7 +1,15 @@
-import { and, asc, count, eq, isNull } from "drizzle-orm";
+import { and, asc, count, desc, eq, inArray, isNull } from "drizzle-orm";
 
 import { getDb } from "@/lib/db";
-import { availability, members, outings, plusOnes } from "@/lib/db/schema";
+import {
+  attendance,
+  availability,
+  draws,
+  members,
+  outings,
+  picks,
+  plusOnes,
+} from "@/lib/db/schema";
 
 import { computeChosenDate, type DayTally } from "./chosen-date";
 import {
@@ -110,6 +118,92 @@ export async function openOuting() {
     .from(outings)
     .where(eq(outings.status, "open"))
     .orderBy(asc(outings.month))
+    .limit(1);
+  return outing ?? null;
+}
+
+export type Reveal = {
+  place: string | null;
+  area: string | null;
+  address: string | null;
+  chosenDate: DayString | null;
+  tier: "low" | "medium" | "high";
+  month: string;
+  /** Everyone going, from Availability on the Chosen Date. */
+  going: string[];
+  plusOnes: number;
+  /** How many tickets the drawn place held — why it won. */
+  tickets: number;
+  /** How many Picks were in the tier at all. */
+  candidates: number;
+  rerolled: boolean;
+};
+
+/** Everything the announced screen shows, in one read. */
+export async function loadReveal(
+  outing: typeof outings.$inferSelect,
+): Promise<Reveal> {
+  const db = getDb();
+
+  const [drawn, attending, plusOneRows, drawRows] = await Promise.all([
+    outing.drawnPickId
+      ? db
+          .select({ name: picks.name, address: picks.address, tier: picks.tier })
+          .from(picks)
+          .where(eq(picks.id, outing.drawnPickId))
+          .limit(1)
+      : Promise.resolve([]),
+    db
+      .select({ name: members.name })
+      .from(attendance)
+      .innerJoin(members, eq(members.id, attendance.memberId))
+      .where(eq(attendance.outingId, outing.id))
+      .orderBy(asc(members.name)),
+    db
+      .select({ memberId: plusOnes.memberId })
+      .from(plusOnes)
+      .where(eq(plusOnes.outingId, outing.id)),
+    db
+      .select({ isReroll: draws.isReroll, candidateCount: draws.candidateCount })
+      .from(draws)
+      .where(eq(draws.outingId, outing.id))
+      .orderBy(asc(draws.drawnAt)),
+  ]);
+
+  const place = drawn[0]?.name ?? null;
+
+  // How many Picks share the drawn name: the tickets it held, and the reason it won.
+  const tickets = place
+    ? (
+        await db
+          .select({ id: picks.id })
+          .from(picks)
+          .where(and(eq(picks.name, place), eq(picks.tier, outing.tier)))
+      ).length
+    : 0;
+
+  return {
+    place,
+    area: null,
+    address: drawn[0]?.address ?? null,
+    chosenDate: outing.chosenDate,
+    tier: outing.tier,
+    month: outing.month,
+    going: attending.map((row) => row.name),
+    plusOnes: plusOneRows.length,
+    tickets,
+    candidates: drawRows.at(-1)?.candidateCount ?? 0,
+    rerolled: drawRows.some((row) => row.isReroll),
+  };
+}
+
+/** The Outing being shown when nothing is open: the most recent announced or done. */
+export async function latestSettledOuting() {
+  const [outing] = await getDb()
+    .select()
+    .from(outings)
+    .where(inArray(outings.status, ["announced", "done"]))
+    .orderBy(desc(outings.month))
     .limit(1);
   return outing ?? null;
 }

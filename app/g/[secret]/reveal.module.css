@@ -1,0 +1,146 @@
+/* The ticket: the month's result as a physical thing, per ticket 06. */
+.ticket {
+  position: relative;
+  background: var(--bone);
+  color: var(--bone-ink);
+  border-radius: var(--radius-lg);
+  padding: 26px 24px;
+  margin-top: 10px;
+}
+
+.month {
+  font-size: var(--step--1);
+  letter-spacing: 0.14em;
+  color: var(--bone-quiet);
+  text-transform: uppercase;
+}
+
+.place {
+  font-family: var(--font-bricolage), sans-serif;
+  font-weight: 700;
+  font-size: var(--step-5);
+  line-height: 0.98;
+  letter-spacing: -0.04em;
+  margin: 10px 0 6px;
+}
+
+.address {
+  font-size: var(--step-0);
+  color: var(--bone-quiet);
+  margin: 0;
+}
+
+.stamp {
+  position: absolute;
+  right: 20px;
+  top: 24px;
+  transform: rotate(7deg);
+  border: 2px solid var(--amber);
+  color: var(--amber-ink);
+  border-radius: 3px;
+  padding: 5px 10px;
+  font-size: var(--step--1);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+}
+
+/* The tear line, with a notch bitten out of each edge. */
+.tear {
+  position: relative;
+  height: 1px;
+  margin: 24px -24px 20px;
+  background: repeating-linear-gradient(
+    to right,
+    var(--bone-rule) 0 6px,
+    transparent 6px 12px
+  );
+}
+
+.tear::before,
+.tear::after {
+  content: "";
+  position: absolute;
+  top: -9px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--field);
+}
+
+.tear::before {
+  left: -9px;
+}
+
+.tear::after {
+  right: -9px;
+}
+
+.facts {
+  display: flex;
+  gap: 26px;
+  flex-wrap: wrap;
+}
+
+.facts div span {
+  display: block;
+  font-size: var(--step--1);
+  color: var(--bone-quiet);
+  margin-bottom: 3px;
+}
+
+.facts div strong {
+  font-family: var(--font-bricolage), sans-serif;
+  font-size: var(--step-2);
+  letter-spacing: -0.02em;
+  font-weight: 700;
+}
+
+.share {
+  width: 100%;
+  background: var(--amber);
+  color: var(--bone-ink);
+  border: none;
+  border-radius: var(--radius);
+  padding: 16px;
+  font-size: var(--step-1);
+  font-weight: 600;
+  margin-top: 16px;
+  cursor: pointer;
+}
+
+.shareNote {
+  color: var(--muted);
+  font-size: var(--step--1);
+  margin: 8px 0 0;
+}
+
+.why {
+  color: var(--muted);
+  margin: 18px 0 0;
+  max-width: var(--measure);
+}
+
+.draft {
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  color: var(--muted);
+  font-size: var(--step--1);
+  margin-top: 16px;
+  line-height: 1.55;
+}
+
+.empty {
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  padding: 20px;
+  color: var(--muted);
+  margin-top: 10px;
+}
+
+.empty strong {
+  display: block;
+  color: var(--bone);
+  font-weight: 500;
+  margin-bottom: 6px;
+}
