@@ -1,0 +1,190 @@
+.add {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 4px 0 26px;
+}
+
+.field {
+  background: var(--raised);
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--radius);
+  color: var(--bone);
+  padding: 13px 14px;
+  font: inherit;
+}
+
+.field::placeholder {
+  color: var(--muted);
+}
+
+.tiers {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.tier input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.tier span {
+  display: block;
+  text-align: center;
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--radius);
+  padding: 10px 4px;
+  cursor: pointer;
+  color: var(--muted);
+}
+
+.tier small {
+  display: block;
+  font-size: var(--step--1);
+  margin-top: 2px;
+}
+
+.tier input:checked + span {
+  border-color: var(--amber);
+  color: var(--amber);
+}
+
+.tier input:focus-visible + span {
+  outline: 2px solid var(--amber);
+  outline-offset: 2px;
+}
+
+.submit {
+  background: var(--bone);
+  color: var(--bone-ink);
+  border: none;
+  border-radius: var(--radius);
+  padding: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.submit:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.error {
+  color: var(--amber);
+  font-size: var(--step--1);
+  margin: 2px 0 0;
+}
+
+.note {
+  color: var(--muted);
+  font-size: var(--step--1);
+  margin: 2px 0 0;
+}
+
+.groupHead {
+  font-size: var(--step--1);
+  color: var(--muted);
+  margin: 26px 0 2px;
+}
+
+.row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--hairline);
+}
+
+.rowOff {
+  opacity: 0.45;
+}
+
+.name {
+  font-size: var(--step-1);
+}
+
+.meta {
+  font-size: var(--step--1);
+  color: var(--muted);
+}
+
+.wanted {
+  color: var(--amber);
+}
+
+.price {
+  color: var(--amber);
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+
+.empty {
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  padding: 18px;
+  color: var(--muted);
+}
+
+/* The tier badge is a real control: the native select sits invisibly on top of it
+   so the phone shows its own picker rather than a bespoke one. */
+.price {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.price select {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  width: 100%;
+  cursor: pointer;
+  font: inherit;
+}
+
+.price:focus-within {
+  outline: 2px solid var(--amber);
+  outline-offset: 3px;
+  border-radius: 3px;
+}
+
+.addressButton {
+  background: none;
+  border: none;
+  border-bottom: 1px dashed var(--hairline-strong);
+  padding: 0;
+  color: var(--muted);
+  font: inherit;
+  cursor: pointer;
+}
+
+.addressForm {
+  display: flex;
+  gap: 6px;
+  margin: 6px 0 2px;
+}
+
+.addressField {
+  flex: 1;
+  background: var(--raised);
+  border: 1px solid var(--hairline-strong);
+  border-radius: 4px;
+  color: var(--bone);
+  padding: 7px 9px;
+  font: inherit;
+  font-size: var(--step--1);
+}
+
+.addressForm button {
+  background: none;
+  border: 1px solid var(--hairline-strong);
+  border-radius: 4px;
+  color: var(--bone);
+  padding: 0 12px;
+  font-size: var(--step--1);
+  cursor: pointer;
+}
