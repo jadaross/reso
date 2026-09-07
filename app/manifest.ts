@@ -16,9 +16,10 @@ export default function manifest(): MetadataRoute.Manifest {
     description: "Where are we eating this month?",
     display: "standalone",
     orientation: "portrait",
-    // Placeholder colours: the look and feel is still wayfinder ticket 06.
-    background_color: "#ffffff",
-    theme_color: "#ffffff",
+    // Both match --field in globals.css, so the launch screen, the browser chrome
+    // and the app itself agree from the first frame. Decided in ticket 06.
+    background_color: "#0e1116",
+    theme_color: "#0e1116",
     icons: [
       { src: "/icon", sizes: "192x192", type: "image/png" },
       { src: "/icon", sizes: "512x512", type: "image/png" },

@@ -1,0 +1,77 @@
+.lede {
+  color: var(--muted);
+  max-width: var(--measure);
+  margin: 0 0 22px;
+}
+
+.title {
+  font-size: var(--step-4);
+  margin: 14px 0 20px;
+}
+
+/* The pick-your-name list: each name is a cloakroom stub, perforated down its spine. */
+.stub {
+  position: relative;
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: var(--bone);
+  color: var(--bone-ink);
+  border: none;
+  border-radius: var(--radius);
+  padding: 18px 20px 18px 30px;
+  font-family: var(--font-bricolage), sans-serif;
+  font-weight: 700;
+  font-size: var(--step-2);
+  letter-spacing: -0.02em;
+  cursor: pointer;
+}
+
+.stub + .stub {
+  margin-top: 10px;
+}
+
+.stub::before {
+  content: "";
+  position: absolute;
+  left: 12px;
+  top: 10px;
+  bottom: 10px;
+  width: 2px;
+  background: radial-gradient(
+      circle at 1px 3px,
+      var(--field) 1.2px,
+      transparent 1.4px
+    )
+    0 0 / 2px 8px repeat-y;
+  opacity: 0.35;
+}
+
+.empty {
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  padding: 20px;
+  color: var(--muted);
+}
+
+.note {
+  color: var(--muted);
+  font-size: var(--step--1);
+  margin-top: 18px;
+  max-width: var(--measure);
+}
+
+.placeholder {
+  border: 1px dashed var(--hairline-strong);
+  border-radius: var(--radius);
+  padding: 24px 20px;
+  color: var(--muted);
+  margin-top: 8px;
+}
+
+.placeholder strong {
+  display: block;
+  color: var(--bone);
+  font-weight: 500;
+  margin-bottom: 6px;
+}

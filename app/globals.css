@@ -1,26 +1,87 @@
 @import "tailwindcss";
 
+/*
+ * The Reso palette, decided in wayfinder ticket 06 (direction A, "Stub").
+ *
+ * One accent colour, used for the current selection and the primary action and
+ * nothing else. Nothing in the app hardcodes a hex value; everything reads these.
+ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --field: #0e1116; /* the table the ticket sits on */
+  --raised: #171b23; /* inputs and quiet panels */
+  --hairline: #232833;
+  --hairline-strong: #2a3140;
+  --bone: #efebe1; /* the ticket, and all primary type */
+  --bone-ink: #14171c; /* type on top of bone */
+  --bone-quiet: #6c6558; /* secondary type on top of bone */
+  --bone-rule: #d6d0c2;
+  --amber: #f0a83c;
+  --amber-ink: #b87516; /* amber that has to sit on bone and stay legible */
+  --muted: #7a8391; /* 4.95:1 on --field, so it clears AA at body size */
+
+  --step--1: 0.8125rem; /* 13px */
+  --step-0: 0.9375rem; /* 15px */
+  --step-1: 1.0625rem; /* 17px */
+  --step-2: 1.375rem; /* 22px */
+  --step-3: 1.75rem; /* 28px */
+  --step-4: 2.125rem; /* 34px */
+  --step-5: 2.875rem; /* 46px */
+
+  --radius: 6px;
+  --radius-lg: 10px;
+  --gutter: 20px;
+  --measure: 34ch;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/*
+ * Painted on <html> so the dark field is up before any content, and the installed
+ * app never flashes white on launch.
+ */
+html {
+  background: var(--field);
+  color-scheme: dark;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  margin: 0;
+  background: var(--field);
+  color: var(--bone);
+  font-family: var(--font-inter-tight), ui-sans-serif, system-ui, sans-serif;
+  font-size: var(--step-0);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  /* Keep content clear of the notch and the home indicator once installed. */
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) 0
+    env(safe-area-inset-left);
+}
+
+h1,
+h2,
+.display {
+  font-family: var(--font-bricolage), var(--font-inter-tight), sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.06;
+  margin: 0;
+}
+
+/* One focus treatment everywhere, visible against both the field and the bone. */
+:focus-visible {
+  outline: 2px solid var(--amber);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }

@@ -117,3 +117,12 @@ export const SCREEN_LABEL: Record<Screen, string> = {
   announced: "The reveal",
   picks: "Restaurants",
 };
+
+export const VARIANTS = ["A", "B", "C"] as const;
+export type Variant = (typeof VARIANTS)[number];
+
+export const VARIANT_NAME: Record<Variant, string> = {
+  A: "Stub",
+  B: "Planner",
+  C: "Menu",
+};

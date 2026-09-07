@@ -35,14 +35,18 @@ const css = `
 .va .day.weekend:not(.on) { border-color:#2F3644; }
 .va .hint { border-top:1px solid #232833; margin-top:20px; padding-top:16px; font-size:15px; line-height:1.5; }
 .va .hint b { color:var(--amber); font-weight:600; }
-.va .ticket { background:var(--bone); color:var(--ink); border-radius:6px; padding:0 24px 26px; margin-top:6px; position:relative; overflow:hidden; }
-.va .ticket::before { content:""; display:block; height:14px; margin:0 -24px 22px;
-  background:radial-gradient(circle at 7px 0, transparent 6px, var(--bone) 6.5px) 0 0/14px 14px repeat-x; }
+.va .ticket { background:var(--bone); color:var(--ink); border-radius:6px; padding:0 24px 26px; margin-top:6px; position:relative; }
+.va .ticket { padding-top:26px; }
 .va .ticket .month { font-size:12px; letter-spacing:.14em; color:#6C6558; }
 .va .ticket .place { font-family:"Bricolage Grotesque",sans-serif; font-weight:700; font-size:46px; line-height:.98;
   letter-spacing:-.04em; margin:10px 0 4px; }
 .va .ticket .area { font-size:16px; color:#6C6558; }
-.va .rule { height:1px; background:#D6D0C2; margin:22px 0 18px; }
+.va .tear { position:relative; height:1px; margin:24px -24px 20px;
+  background:repeating-linear-gradient(to right, #C9C2B2 0 6px, transparent 6px 12px); }
+.va .tear::before, .va .tear::after { content:""; position:absolute; top:-9px; width:18px; height:18px;
+  border-radius:50%; background:var(--ink); }
+.va .tear::before { left:-9px; }
+.va .tear::after { right:-9px; }
 .va .rows { display:flex; gap:26px; }
 .va .rows div span { display:block; font-size:12px; color:#6C6558; margin-bottom:3px; }
 .va .rows div strong { font-family:"Bricolage Grotesque",sans-serif; font-size:22px; letter-spacing:-.02em; }
@@ -144,7 +148,7 @@ function Announced() {
         <div className="month">{MONTH_LABEL.toUpperCase()}</div>
         <div className="place">{DRAWN.name}</div>
         <div className="area">{DRAWN.area} · {DRAWN.address}</div>
-        <div className="rule" />
+        <div className="tear" />
         <div className="rows">
           <div>
             <span>Date</span>
