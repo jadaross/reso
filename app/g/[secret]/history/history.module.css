@@ -1,0 +1,75 @@
+.visit {
+  border-bottom: 1px solid var(--hairline);
+  padding: 18px 0;
+}
+
+.head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.place {
+  font-family: var(--font-bricolage), sans-serif;
+  font-weight: 700;
+  font-size: var(--step-2);
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+.when {
+  color: var(--muted);
+  font-size: var(--step--1);
+  margin: 4px 0 0;
+}
+
+.score {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.score strong {
+  display: block;
+  font-family: var(--font-bricolage), sans-serif;
+  font-size: var(--step-2);
+  color: var(--amber);
+}
+
+.score span {
+  font-size: var(--step--1);
+  color: var(--muted);
+}
+
+.unrated {
+  font-size: var(--step--1);
+  color: var(--muted);
+}
+
+.notes {
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 0;
+}
+
+.notes li {
+  border-left: 2px solid var(--hairline-strong);
+  padding: 0 0 0 12px;
+  margin-top: 10px;
+  color: var(--bone);
+  font-size: var(--step-0);
+}
+
+.noteWho {
+  display: block;
+  color: var(--muted);
+  font-size: var(--step--1);
+  margin-bottom: 2px;
+}
+
+.empty {
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  padding: 20px;
+  color: var(--muted);
+}

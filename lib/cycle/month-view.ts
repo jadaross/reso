@@ -9,6 +9,7 @@ import {
   outings,
   picks,
   plusOnes,
+  ratings,
 } from "@/lib/db/schema";
 
 import { computeChosenDate, type DayTally } from "./chosen-date";
@@ -206,4 +207,104 @@ export async function latestSettledOuting() {
     .orderBy(desc(outings.month))
     .limit(1);
   return outing ?? null;
+}
+
+export type VisitRow = {
+  outingId: string;
+  month: string;
+  chosenDate: DayString | null;
+  place: string | null;
+  address: string | null;
+  tier: "low" | "medium" | "high";
+  went: number;
+  ratingCount: number;
+  averageScore: number | null;
+  notes: { who: string; score: number; note: string }[];
+};
+
+/**
+ * Every Visit, newest first.
+ *
+ * Archived Members keep their attendance and their ratings: removing someone from
+ * the Group takes their name out of circulation, it does not edit the record of
+ * evenings they were at.
+ */
+export async function loadVisits(): Promise<VisitRow[]> {
+  const db = getDb();
+
+  const done = await db
+    .select()
+    .from(outings)
+    .where(eq(outings.status, "done"))
+    .orderBy(desc(outings.month));
+
+  if (done.length === 0) return [];
+
+  const ids = done.map((outing) => outing.id);
+
+  const [attendanceRows, ratingRows, drawnPicks] = await Promise.all([
+    db
+      .select({ outingId: attendance.outingId })
+      .from(attendance)
+      .where(inArray(attendance.outingId, ids)),
+    db
+      .select({
+        outingId: ratings.outingId,
+        score: ratings.score,
+        note: ratings.note,
+        who: members.name,
+      })
+      .from(ratings)
+      .innerJoin(members, eq(members.id, ratings.memberId))
+      .where(inArray(ratings.outingId, ids)),
+    db
+      .select({ id: picks.id, name: picks.name, address: picks.address })
+      .from(picks),
+  ]);
+
+  const pickById = new Map(drawnPicks.map((pick) => [pick.id, pick]));
+
+  return done.map((outing) => {
+    const mine = ratingRows.filter((row) => row.outingId === outing.id);
+    const pick = outing.drawnPickId ? pickById.get(outing.drawnPickId) : undefined;
+
+    return {
+      outingId: outing.id,
+      month: outing.month,
+      chosenDate: outing.chosenDate,
+      place: pick?.name ?? null,
+      address: pick?.address ?? null,
+      tier: outing.tier,
+      went: attendanceRows.filter((row) => row.outingId === outing.id).length,
+      ratingCount: mine.length,
+      averageScore: mine.length
+        ? mine.reduce((total, row) => total + row.score, 0) / mine.length
+        : null,
+      notes: mine
+        .filter((row) => row.note)
+        .map((row) => ({ who: row.who, score: row.score, note: row.note! })),
+    };
+  });
+}
+
+/** This Member's rating for an Outing, if they have given one. */
+export async function myRating(outingId: string, memberId: string) {
+  const [row] = await getDb()
+    .select({ score: ratings.score, note: ratings.note })
+    .from(ratings)
+    .where(and(eq(ratings.outingId, outingId), eq(ratings.memberId, memberId)))
+    .limit(1);
+  return row ?? null;
+}
+
+/** True when this Member is down as having gone. */
+export async function didAttend(outingId: string, memberId: string) {
+  const [row] = await getDb()
+    .select({ memberId: attendance.memberId })
+    .from(attendance)
+    .where(
+      and(eq(attendance.outingId, outingId), eq(attendance.memberId, memberId)),
+    )
+    .limit(1);
+  return Boolean(row);
 }

@@ -1,9 +1,14 @@
 import { redirect } from "next/navigation";
 
+import { monthName, readableDate } from "@/lib/cycle/announcement";
+import { loadVisits } from "@/lib/cycle/month-view";
 import { currentMember } from "@/lib/identity/guard";
 
 import styles from "../page.module.css";
 import { Shell } from "../shell";
+import rows from "./history.module.css";
+
+const TIER_LABEL = { low: "Low", medium: "Medium", high: "High" } as const;
 
 export default async function History({
   params,
@@ -14,15 +19,67 @@ export default async function History({
   const member = await currentMember();
   if (!member) redirect(`/g/${secret}`);
 
+  const visits = await loadVisits();
+
   return (
-    <Shell secret={secret} member={member} section="history">
-      {/* Visits, ratings and the record are ticket 14. */}
-      <h1 className={styles.title}>History</h1>
-      <div className={styles.placeholder}>
-        <strong>Where we&rsquo;ve been lands next.</strong>
-        Recording who came, rating the place out of five and listing past visits is
-        ticket 14.
-      </div>
+    <Shell
+      secret={secret}
+      member={member}
+      section="history"
+      eyebrow={visits.length === 1 ? "1 dinner" : `${visits.length} dinners`}
+    >
+      <h1 className={styles.title}>Where we&rsquo;ve been</h1>
+
+      {visits.length === 0 ? (
+        <p className={rows.empty}>
+          Nothing yet. The first dinner shows up here the morning after.
+        </p>
+      ) : null}
+
+      {visits.map((visit) => (
+        <article key={visit.outingId} className={rows.visit}>
+          <div className={rows.head}>
+            <div>
+              <h2 className={rows.place}>{visit.place ?? "No restaurant drawn"}</h2>
+              <p className={rows.when}>
+                {visit.chosenDate
+                  ? readableDate(visit.chosenDate)
+                  : monthName(visit.month)}
+                {" · "}
+                {visit.went} {visit.went === 1 ? "person" : "people"}
+                {" · "}
+                {TIER_LABEL[visit.tier]}
+              </p>
+            </div>
+            <div className={rows.score}>
+              {visit.averageScore === null ? (
+                <span className={rows.unrated}>unrated</span>
+              ) : (
+                <>
+                  <strong>{visit.averageScore.toFixed(1)}</strong>
+                  <span>
+                    from {visit.ratingCount}{" "}
+                    {visit.ratingCount === 1 ? "person" : "people"}
+                  </span>
+                </>
+              )}
+            </div>
+          </div>
+
+          {visit.notes.length > 0 ? (
+            <ul className={rows.notes}>
+              {visit.notes.map((note) => (
+                <li key={note.who}>
+                  <span className={rows.noteWho}>
+                    {note.who} &middot; {note.score}/5
+                  </span>
+                  {note.note}
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </article>
+      ))}
     </Shell>
   );
 }

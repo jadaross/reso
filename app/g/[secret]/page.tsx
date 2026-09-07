@@ -3,9 +3,11 @@ import { asc, isNull } from "drizzle-orm";
 import { EnablePush } from "@/components/enable-push";
 import { monthName } from "@/lib/cycle/announcement";
 import {
+  didAttend,
   latestSettledOuting,
   loadMonthView,
   loadReveal,
+  myRating,
   openOuting,
 } from "@/lib/cycle/month-view";
 import { getDb } from "@/lib/db";
@@ -14,6 +16,7 @@ import { currentAdmin, currentMember } from "@/lib/identity/guard";
 
 import { claimNameForm } from "./actions";
 import { Calendar } from "./calendar";
+import { Rate } from "./rate";
 import { Reveal } from "./reveal";
 import styles from "./page.module.css";
 import { BareShell, Shell } from "./shell";
@@ -40,6 +43,16 @@ export default async function GroupHome({
 
     const reveal = await loadReveal(settled);
     const admin = await currentAdmin();
+
+    // The morning after: whoever went is asked how it was, once.
+    const askForRating =
+      settled.status === "done" &&
+      reveal.place !== null &&
+      (await didAttend(settled.id, member.id));
+    const existing = askForRating
+      ? await myRating(settled.id, member.id)
+      : null;
+
     return (
       <Shell
         secret={secret}
@@ -50,6 +63,14 @@ export default async function GroupHome({
         {/* No heading: the ticket carries the month, and printing it twice above
             its own stamp is the sort of thing that makes a screen feel generated. */}
         <Reveal data={reveal} isAdmin={Boolean(admin)} />
+        {askForRating && reveal.place ? (
+          <Rate
+            secret={secret}
+            outingId={settled.id}
+            place={reveal.place}
+            existing={existing}
+          />
+        ) : null}
       </Shell>
     );
   }
