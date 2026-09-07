@@ -29,6 +29,9 @@ export function Shell({
   eyebrow?: string;
   children: React.ReactNode;
 }) {
+  // Only Admins are shown the way in. The PIN is what actually gates it; this just
+  // keeps a door nobody else can open out of everyone else's way.
+  const adminHref = member.isAdmin ? `/g/${secret}/admin` : null;
   return (
     <div className={styles.shell}>
       <header className={styles.header}>
@@ -39,7 +42,17 @@ export function Shell({
             <span className={styles.notYou}>Not you?</span>
           </button>
         </form>
-        {eyebrow ? <span className={styles.eyebrow}>{eyebrow}</span> : null}
+        <span className={styles.eyebrow}>
+          {eyebrow}
+          {adminHref ? (
+            <>
+              {eyebrow ? " · " : ""}
+              <Link href={adminHref} className={styles.adminLink}>
+                Admin
+              </Link>
+            </>
+          ) : null}
+        </span>
       </header>
 
       <main className={styles.main}>{children}</main>
