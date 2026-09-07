@@ -26,9 +26,26 @@ Two smaller things are deliberately unresolved in the code and marked where they
 sit: there is no Admin PIN lockout policy, and an Outing whose tier has no Picks
 closes with no Drawn Pick rather than falling through to another tier.
 
-## Getting it running
+## It is live
+
+**https://reso-phi.vercel.app** — the Group Link is the whole front door. Everyone opens it, taps
+their name, then adds Reso to their Home Screen and taps their name once more inside the installed
+app (it starts with a cookie jar of its own).
+
+## Getting it running locally
 
 Everything below is free. Nothing here needs a card.
+
+The quickest local setup is Postgres on your own machine rather than a cloud database — the client
+picks its driver from the URL, so a `localhost` `DATABASE_URL` uses node-postgres and anything else
+uses Neon's:
+
+```bash
+createdb reso_dev
+# then in .env.local:
+#   DATABASE_URL=postgresql://$(whoami)@localhost:5432/reso_dev
+#   DATABASE_URL_UNPOOLED=postgresql://$(whoami)@localhost:5432/reso_dev
+```
 
 **1. Create the database.** From the Vercel dashboard, add the Neon integration to
 the project on the Free plan. It injects `DATABASE_URL` (pooled, via PgBouncer) and
@@ -55,7 +72,8 @@ The same variables need to exist in the Vercel project.
 
 ```bash
 pnpm db:migrate
-pnpm exec tsx scripts/seed.ts --admin "Jada" --pin 481625
+pnpm exec tsx scripts/seed.ts --admin "Jada" --pin <your-pin> \
+  --members "Lottie,Sienna,Scotty,Sophie,Jack"
 ```
 
 The seed prints your Group Link — a path like `/g/k7m2q9xr4vn8bc3t`. That is the
