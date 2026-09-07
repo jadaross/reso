@@ -7,6 +7,7 @@ import {
   addMonths,
   calendarGrid,
   closeDayFor,
+  stockUpDayFor,
   daysInMonth,
   monthOf,
   openDayFor,
@@ -41,9 +42,12 @@ describe("dates", () => {
   it("derives the month, open day and Close Day of an Outing", () => {
     assert.equal(monthOf("2026-03-19"), "2026-03-01");
     assert.equal(openDayFor("2026-03-01"), "2026-02-01");
-    assert.equal(closeDayFor("2026-03-01"), "2026-02-15");
+    assert.equal(closeDayFor("2026-03-01"), "2026-02-22");
     // The month before January is in the previous year.
-    assert.equal(closeDayFor("2026-01-01"), "2025-12-15");
+    assert.equal(closeDayFor("2026-01-01"), "2025-12-22");
+    // The "add some places" nudge stays on the 5th, independent of Close Day.
+    assert.equal(stockUpDayFor("2026-03-01"), "2026-02-05");
+    assert.equal(stockUpDayFor("2026-01-01"), "2025-12-05");
   });
 
   it("gets weekdays right", () => {

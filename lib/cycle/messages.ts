@@ -17,7 +17,12 @@ import { sendToSubscriptions } from "@/lib/push/send";
 import { announcementText, monthName } from "./announcement";
 
 const TIER_WORD = { low: "cheap", medium: "middling", high: "expensive" } as const;
-import { closeDayFor, todayInLondon, type DayString } from "./dates";
+import {
+  closeDayFor,
+  stockUpDayFor,
+  todayInLondon,
+  type DayString,
+} from "./dates";
 
 /**
  * The message calendar, settled in wayfinder ticket 05.
@@ -271,10 +276,12 @@ export async function sendDueMessages(
     if (outing.status === "open") {
       due.push("opened");
 
-      // The 5th, unconditionally. An earlier version only fired when the tier was
-      // thin, which meant the most active months went silent — and the point is to
-      // keep people opening the app, not only to rescue an empty list.
-      if (today >= addDays(closeDayFor(outing.month), -10)) {
+      // The 5th, unconditionally, and anchored to the 5th rather than to Close Day.
+      // An earlier version only fired when the tier was thin, which meant the most
+      // active months went silent — the point is to keep people opening the app, not
+      // only to rescue an empty list. Anchoring it here keeps it early even though
+      // Close Day has since moved a week later.
+      if (today >= stockUpDayFor(outing.month)) {
         due.push("stock-up");
       }
 

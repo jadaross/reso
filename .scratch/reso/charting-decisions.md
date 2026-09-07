@@ -15,7 +15,7 @@ Settled in the charting grilling session with Jada. Terms are defined in `/CONTE
 
 - Each calendar month has one Outing.
 - On the 1st of the month before, the Outing opens: Members tap the days of that month they are free (whole days, dinner implied, one tap toggles a day).
-- Close Day is the 15th of the month before. On Close Day the site locks Availability, computes the Chosen Date, runs the Draw, and produces the announcement.
+- Close Day is the 22nd of the month before. On Close Day the site locks Availability, computes the Chosen Date, runs the Draw, and produces the announcement.
 - Chosen Date rule: the day with the most available Members wins. Ties: Friday or Saturday beats a weekday, then the earliest day wins.
 - A Member with no Availability recorded counts as unavailable every day.
 - Quorum: if the best day has fewer than 3 Members, the site never cancels; it shows the Admin the top days and the Admin decides.
@@ -48,5 +48,5 @@ Settled in the charting grilling session with Jada. Terms are defined in `/CONTE
 
 ## Stack
 
-- Next.js App Router on Vercel Hobby (free), Postgres from the Vercel Marketplace on a free tier, Drizzle for the schema, Tailwind + shadcn/ui, one daily Vercel cron (Hobby allows one run per day with up to an hour of drift, which is fine for the 1st/8th/15th schedule).
+- Next.js App Router on Vercel Hobby (free), Postgres from the Vercel Marketplace on a free tier, Drizzle for the schema, Tailwind + shadcn/ui, one daily Vercel cron (Hobby allows one run per day with up to an hour of drift, which is fine for the 1st/5th/15th/20th/22nd schedule).
 - Look and feel: no preference from Jada beyond "not a default template" and app-like on a phone.

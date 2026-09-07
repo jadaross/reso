@@ -58,7 +58,7 @@ The days of an Outing's month a Member has tapped as free. Whole days, dinner im
 _Avoid_: RSVP, free dates, calendar
 
 **Close Day**:
-The 15th of the month before the Outing. Availability locks, the Chosen Date is computed, and the Draw runs.
+The 22nd of the month before the Outing. Availability locks, the Chosen Date is computed, and the Draw runs.
 
 **Chosen Date**:
 The day of the Outing's month with the most available Members, after tie-breaks.

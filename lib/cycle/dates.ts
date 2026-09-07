@@ -72,9 +72,22 @@ export function openDayFor(month: MonthString): DayString {
   return addMonths(month, -1);
 }
 
-/** Close Day: the 15th of the month before the Outing. */
+/**
+ * Close Day: the 22nd of the month before the Outing.
+ *
+ * It was the 15th. Jada moved it a week later because deciding on the 15th settles
+ * a dinner that might not happen until the 31st — six weeks of knowing where you
+ * are going and not going there. A fixed calendar day cannot fix that entirely:
+ * an early-month dinner is still decided closer than a late-month one. It just
+ * shortens the worst case by a week.
+ */
 export function closeDayFor(month: MonthString): DayString {
-  return `${addMonths(month, -1).slice(0, 7)}-15`;
+  return `${addMonths(month, -1).slice(0, 7)}-22`;
+}
+
+/** The day the "add some places" nudge goes out: the 5th of the month before. */
+export function stockUpDayFor(month: MonthString): DayString {
+  return `${addMonths(month, -1).slice(0, 7)}-05`;
 }
 
 /**
