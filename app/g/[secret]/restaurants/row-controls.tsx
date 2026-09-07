@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 
 import type { PriceTier } from "@/lib/db/schema";
 
-import { setAddress, setTier } from "./pick-actions";
+import { retryLink, setAddress, setTier } from "./pick-actions";
 import styles from "./restaurants.module.css";
 
 const MARK: Record<PriceTier, string> = { low: "£", medium: "££", high: "£££" };
@@ -90,5 +90,35 @@ export function AddressControl({
         Save
       </button>
     </form>
+  );
+}
+
+/** Offered when a pasted link never parsed. The raw link is still on the Pick. */
+export function RetryLink({
+  secret,
+  pickIds,
+}: {
+  secret: string;
+  pickIds: string[];
+}) {
+  const [pending, startTransition] = useTransition();
+  const [note, setNote] = useState<string | null>(null);
+
+  if (note) return <span className={styles.meta}>{note}</span>;
+
+  return (
+    <button
+      type="button"
+      className={styles.addressButton}
+      disabled={pending}
+      onClick={() =>
+        startTransition(async () => {
+          const result = await retryLink(secret, pickIds);
+          setNote(result.note);
+        })
+      }
+    >
+      {pending ? "trying the link\u2026" : "link didn\u2019t read \u2014 try again"}
+    </button>
   );
 }

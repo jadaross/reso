@@ -9,7 +9,7 @@ import { currentAdmin, currentMember } from "@/lib/identity/guard";
 import styles from "../page.module.css";
 import { Shell } from "../shell";
 import { AddForm } from "./add-form";
-import { AddressControl, TierControl } from "./row-controls";
+import { AddressControl, RetryLink, TierControl } from "./row-controls";
 import { Unlock } from "./unlock";
 import rows from "./restaurants.module.css";
 
@@ -164,6 +164,8 @@ type Entry = {
   tier: PriceTier;
   address: string | null;
   addedBy: string[];
+  /** True when a link was pasted and never parsed; the raw link is still stored. */
+  unresolved: boolean;
   /** Every Pick for this restaurant — one ticket each in the Draw. */
   pickIds: string[];
 };
@@ -182,6 +184,7 @@ function group(picksInSection: {
   tier: PriceTier;
   address: string | null;
   addedBy: string;
+  linkStatus: "none" | "resolved" | "unresolved";
 }[]): Entry[] {
   const byName = new Map<string, Entry>();
 
@@ -191,6 +194,7 @@ function group(picksInSection: {
       existing.addedBy.push(pick.addedBy);
       existing.pickIds.push(pick.id);
       existing.address ??= pick.address;
+      existing.unresolved ||= pick.linkStatus === "unresolved";
     } else {
       byName.set(pick.name, {
         key: pick.name,
@@ -198,6 +202,7 @@ function group(picksInSection: {
         tier: pick.tier,
         address: pick.address,
         addedBy: [pick.addedBy],
+        unresolved: pick.linkStatus === "unresolved",
         pickIds: [pick.id],
       });
     }
@@ -222,7 +227,11 @@ function Row({
       <div>
         <div className={rows.name}>{entry.name}</div>
         <div className={rows.meta}>
-          {entry.address ?? (
+          {entry.address ? (
+            entry.address
+          ) : entry.unresolved ? (
+            <RetryLink secret={secret} pickIds={entry.pickIds} />
+          ) : (
             <AddressControl secret={secret} pickIds={entry.pickIds} />
           )}{" "}
           &middot; {list(entry.addedBy)}

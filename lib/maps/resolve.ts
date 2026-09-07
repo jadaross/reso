@@ -68,7 +68,22 @@ async function followRedirects(start: string): Promise<string | null> {
   return null;
 }
 
+/**
+ * One hop, HEAD first and GET as a fallback.
+ *
+ * HEAD is enough to read a Location header and downloads no body, which is the
+ * whole reason it is tried first. But these are undocumented endpoints behind a
+ * CDN, and a CDN that answers GET will sometimes refuse HEAD from an unfamiliar
+ * client or edge — so a failed HEAD is retried once as a GET before giving up on
+ * the link. The body is never read either way.
+ */
 async function fetchOnce(url: URL): Promise<Response | null> {
+  const head = await attempt(url, "HEAD");
+  if (head && (head.status < 400 || head.headers.get("location"))) return head;
+  return attempt(url, "GET");
+}
+
+async function attempt(url: URL, method: "HEAD" | "GET"): Promise<Response | null> {
   const headers: Record<string, string> = { "user-agent": USER_AGENT };
   if (classifyHost(url.host) === "google") {
     headers.cookie = GOOGLE_CONSENT_COOKIE;
@@ -79,7 +94,7 @@ async function fetchOnce(url: URL): Promise<Response | null> {
 
   try {
     return await fetch(url, {
-      method: "HEAD",
+      method,
       redirect: "manual",
       headers,
       signal: controller.signal,

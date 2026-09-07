@@ -112,3 +112,56 @@ export async function setAddress(
     .where(inArray(picks.id, pickIds));
   revalidatePath(`/g/${secret}/restaurants`);
 }
+
+/**
+ * Try a stored link again.
+ *
+ * Every failed parse keeps the raw link precisely so this is possible: these are
+ * undocumented endpoints and a failure is as likely to be a bad minute as a bad
+ * link. Nothing is overwritten unless the retry actually yields something.
+ */
+export async function retryLink(
+  secret: string,
+  pickIds: string[],
+): Promise<{ ok: boolean; note: string }> {
+  const member = await currentMember();
+  if (!member || pickIds.length === 0) {
+    return { ok: false, note: "Pick your name first." };
+  }
+
+  const db = getDb();
+  const [pick] = await db
+    .select({ rawLink: picks.rawLink })
+    .from(picks)
+    .where(inArray(picks.id, pickIds))
+    .limit(1);
+
+  if (!pick?.rawLink) return { ok: false, note: "There is no link to retry." };
+
+  const parsed = isFetchableUrl(pick.rawLink)
+    ? await resolvePlaceLink(pick.rawLink)
+    : null;
+
+  if (!parsed) {
+    return { ok: false, note: "Still no luck. The link may have expired." };
+  }
+
+  await db
+    .update(picks)
+    .set({
+      linkSource: parsed.source,
+      linkStatus: "resolved",
+      resolvedName: parsed.name,
+      address: parsed.address,
+      lat: parsed.lat,
+      lng: parsed.lng,
+      externalPlaceId: parsed.externalPlaceId,
+    })
+    .where(inArray(picks.id, pickIds));
+
+  revalidatePath(`/g/${secret}/restaurants`);
+  return {
+    ok: true,
+    note: parsed.address ? "Got it." : "Got the place, but no address.",
+  };
+}
