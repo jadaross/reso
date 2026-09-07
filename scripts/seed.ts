@@ -1,13 +1,15 @@
 /**
  * Bootstrap a fresh Reso database: the Admin PIN, the first Group Link, and the
- * first Member (an Admin, so someone can add everyone else).
+ * Members.
  *
- *   pnpm exec tsx scripts/seed.ts --admin "Jada" --pin 481625
+ *   pnpm exec tsx scripts/seed.ts --admin "Jada" --pin 481625 \
+ *     --members "Lottie,Sienna,Scotty,Sophie,Jack"
  *
+ * --members is optional; the Admin can add everyone from the Admin panel instead.
  * Safe to re-run: it will not create a second settings row or a second Member with
  * the same name, and it prints the live Group Link either way.
  */
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 
 import { getDb } from "../lib/db";
 import { groupSecrets, groupSettings, members } from "../lib/db/schema";
@@ -22,6 +24,10 @@ function arg(name: string): string | undefined {
 async function main() {
   const adminName = arg("admin");
   const pin = arg("pin");
+  const roster = (arg("members") ?? "")
+    .split(",")
+    .map((name) => name.trim())
+    .filter(Boolean);
 
   if (!adminName || !pin) {
     console.error('Usage: tsx scripts/seed.ts --admin "Name" --pin 481625');
@@ -51,6 +57,22 @@ async function main() {
 
   if (!existingAdmin) {
     await db.insert(members).values({ name: adminName, isAdmin: true });
+  }
+
+  // Names are added, never claimed here: a Member exists as soon as the Admin types
+  // their name, and stays visibly unopened until one of their Devices taps it.
+  if (roster.length > 0) {
+    const already = await db
+      .select({ name: members.name })
+      .from(members)
+      .where(inArray(members.name, roster));
+    const have = new Set(already.map((row) => row.name));
+    const missing = roster.filter((name) => name !== adminName && !have.has(name));
+
+    if (missing.length > 0) {
+      await db.insert(members).values(missing.map((name) => ({ name })));
+    }
+    console.log(`Members:    ${[adminName, ...roster.filter((n) => n !== adminName)].join(", ")}`);
   }
 
   const live = await db

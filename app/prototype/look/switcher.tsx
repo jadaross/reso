@@ -5,16 +5,10 @@
 import { useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 
-import { SCREENS, SCREEN_LABEL, type Screen } from "./fixtures";
-
-export const VARIANTS = ["A", "B", "C"] as const;
-export type Variant = (typeof VARIANTS)[number];
-
-export const VARIANT_NAME: Record<Variant, string> = {
-  A: "Stub",
-  B: "Planner",
-  C: "Menu",
-};
+import {
+  SCREENS, SCREEN_LABEL, VARIANTS, VARIANT_NAME,
+  type Screen, type Variant,
+} from "./fixtures";
 
 export function PrototypeSwitcher({
   variant,

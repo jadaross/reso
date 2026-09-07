@@ -4,6 +4,7 @@ import { describe, it } from "node:test";
 import { computeChosenDate } from "./chosen-date";
 import {
   addMonths,
+  calendarGrid,
   closeDayFor,
   daysInMonth,
   monthOf,
@@ -177,5 +178,32 @@ describe("the draw", () => {
       ratio > 1.8 && ratio < 2.2,
       `expected roughly 2:1, got ${ratio.toFixed(3)}`,
     );
+  });
+});
+
+describe("the calendar grid", () => {
+  it("starts the week on Monday, so the weekend stays together", () => {
+    // 1 October 2026 is a Thursday, so Monday, Tuesday and Wednesday lead as blanks.
+    const cells = calendarGrid("2026-10-01");
+    assert.deepEqual(cells.slice(0, 4), [null, null, null, "2026-10-01"]);
+  });
+
+  it("pads to whole weeks so the columns line up", () => {
+    for (const month of ["2026-01-01", "2026-02-01", "2026-10-01", "2027-02-01"]) {
+      assert.equal(calendarGrid(month).length % 7, 0);
+    }
+  });
+
+  it("holds every day of the month exactly once", () => {
+    const cells = calendarGrid("2026-10-01");
+    assert.deepEqual(
+      cells.filter((cell): cell is string => cell !== null),
+      daysInMonth("2026-10-01"),
+    );
+  });
+
+  it("handles a February that starts on a Monday with no padding at the front", () => {
+    // 1 February 2027 is a Monday.
+    assert.equal(calendarGrid("2027-02-01")[0], "2027-02-01");
   });
 });

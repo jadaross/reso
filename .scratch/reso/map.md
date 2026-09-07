@@ -1,5 +1,9 @@
 # Reso — wayfinder map
 
+Status: **reached.** The destination was a v1 spec ready to build slice by slice. It exists at
+`.scratch/reso/spec.md`, with build tickets 08–17 in `issues/`. All seven decision tickets are
+resolved and no fog remains. Work continues on the build tickets, not on this map.
+
 Label: wayfinder:map
 Tracker: local markdown (`.scratch/reso/`), see plugin doc `issue-tracker-local.md`.
 
@@ -24,14 +28,15 @@ A written v1 spec for Reso — the monthly restaurant-draw site for one London f
 - [Installable web app and push notifications on iPhone from Next.js](issues/03-pwa-and-web-push-on-ios.md) — Standard VAPID web push works with no Apple account; a static service worker is enough. The installed app gets a fresh cookie jar, so the group secret must live in the URL path and the name pick must happen inside the installed app.
 - [Extracting name, address and coordinates from pasted Maps links without an API](issues/02-maps-link-parsing.md) — Apple links carry name, address and coordinates in the URL itself, so they parse cleanly. Google short links give only a name and coordinates, never an address. Always store the raw link and fall back to the typed name.
 - [How the shared link, name-picking, and Admin PIN behave](issues/04-shared-link-identity.md) — The whole app sits under `/g/<secret>`; identity is a signed HttpOnly cookie per Device, durable because installed Home Screen apps are exempt from ITP. Names are not exclusive and switching is one tap. Removal archives. One Group-wide Admin PIN, 30-day unlock. The secret is only a bootstrap credential, so rotating it costs nothing for Devices already installed.
+- [Look and feel: a throwaway prototype of the phone screens](issues/06-look-and-feel-prototype.md) — Direction A, the ticket: a bone card with a tear line on a near-black field, amber accent, Bricolage Grotesque over Inter Tight. B's per-day density bars are folded into its calendar so consensus is visible while it forms. Agent's call under Jada's standing delegation.
+- [The reminder and announcement messages: when, to whom, and what they say](issues/05-message-schedule-and-wording.md) — Five push moments across the cycle plus one Admin share; the 8th nudges only the silent; nothing reaches WhatsApp without a human tap. Wording is a draft, the schedule is settled. Cron drift is fine, so Workflows are not needed.
+- [Write the v1 spec and repo layout](issues/07-write-the-spec-and-repo-layout.md) — The destination. Spec at `.scratch/reso/spec.md`, build tickets 08–17 alongside it. Repo layout was settled in code and is documented in the README. Three fog items became decisions here rather than tickets.
 
 ## Not yet specified
 
-- Whether a Pick added from a Google link should ask the Member to paste the address by hand, given Google links carry no address. Decide during the look-and-feel prototype or the spec.
-- What the site does when the Outing's tier has no Picks at all (tell the Admin? fall through to the next tier?). Sharpen during the spec ticket.
-- How attendance at a Visit is confirmed after the fact (auto from Availability on the Chosen Date, editable by the Admin?), and whether a Chosen Date can be changed after the announcement. Surfaced by the identity ticket: removing a Member after Close Day drops their Availability, so this also has to say what that does to an already-announced Chosen Date and headcount.
-- What the home screen shows in each phase of the cycle (open, closed and announced, dinner done). Depends on the look-and-feel prototype.
-- Whether the daily cron's up-to-an-hour drift on Hobby matters for the "day before the dinner" reminder, or whether Vercel Workflows' sleep is worth the extra moving part.
+Nothing. The fog is clear: every question this map set out to answer has been answered, and the
+three that were still vague at the last frontier became decisions in the spec rather than new
+tickets.
 
 ## Out of scope
 
