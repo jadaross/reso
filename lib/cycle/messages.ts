@@ -80,11 +80,8 @@ export function copyFor(
       };
     case "stock-up":
       return {
-        title:
-          facts.inTier === 0
-            ? `No ${facts.tierLabel} places on the list`
-            : `Only ${facts.inTier} ${facts.tierLabel} ${facts.inTier === 1 ? "place" : "places"} to draw from`,
-        body: "Add somewhere you fancy — it takes ten seconds.",
+        title: "Add some places",
+        body: `${month} is a ${facts.tierLabel} month. Anywhere you fancy — it takes ten seconds.`,
       };
     case "closing-soon":
       return {
@@ -274,12 +271,10 @@ export async function sendDueMessages(
     if (outing.status === "open") {
       due.push("opened");
 
-      // Nudge the list when the month's tier is thin. Fires from the 5th, so there
-      // is time to act on it before Close Day rather than the morning of.
-      if (
-        today >= addDays(closeDayFor(outing.month), -10) &&
-        inTier.length < 3
-      ) {
+      // The 5th, unconditionally. An earlier version only fired when the tier was
+      // thin, which meant the most active months went silent — and the point is to
+      // keep people opening the app, not only to rescue an empty list.
+      if (today >= addDays(closeDayFor(outing.month), -10)) {
         due.push("stock-up");
       }
 

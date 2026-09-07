@@ -281,10 +281,12 @@ describe("message wording", () => {
     assert.match(copyFor("rate", facts).title, /How was Mangal 2\?/);
   });
 
-  it("says how thin the list is, in the plural that fits", () => {
-    assert.match(copyFor("stock-up", { ...facts, inTier: 0 }).title, /No cheap places/);
-    assert.match(copyFor("stock-up", { ...facts, inTier: 1 }).title, /Only 1 cheap place\b/);
-    assert.match(copyFor("stock-up", { ...facts, inTier: 2 }).title, /Only 2 cheap places/);
+  it("asks for places without depending on how many there already are", () => {
+    for (const inTier of [0, 1, 9]) {
+      const copy = copyFor("stock-up", { ...facts, inTier });
+      assert.equal(copy.title, "Add some places");
+      assert.match(copy.body, /October is a cheap month/);
+    }
   });
 
   it("warns before the month closes without nagging about dates twice", () => {

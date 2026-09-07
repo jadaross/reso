@@ -56,9 +56,12 @@ than a miss.
 Jada asked for a couple more nudges "just to make sure people use it". Two were added, both once per
 Outing like the rest:
 
-- **stock-up**, from ten days before Close Day, to everyone, only when the month's tier holds fewer
-  than three Picks. It names the shortage: "No cheap places on the list" or "Only 2 cheap places to
-  draw from". Conditional rather than scheduled, so a healthy list never triggers it.
+- **stock-up**, ten days before Close Day (the 5th), to everyone, unconditionally. It began as a
+  conditional nudge that only fired when the tier held fewer than three Picks, which Jada corrected:
+  "we just have a notification saying 'Add some places', no matter what, no condition." The point is
+  to keep people opening the app, and a condition meant the most active months went silent. The
+  wording lost the shortage count with it, since naming a shortage that may not exist would be
+  wrong.
 - **closing-soon**, two days before Close Day, to everyone: last chance to change your dates. This
   one goes to everybody, where last-call goes only to the silent — they answer different questions.
 
