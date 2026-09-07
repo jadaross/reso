@@ -4,6 +4,8 @@ import { getDb } from "@/lib/db";
 import { members } from "@/lib/db/schema";
 import { currentMember } from "@/lib/identity/guard";
 
+import { EnablePush } from "@/components/enable-push";
+
 import { claimNameForm, switchNameForm } from "./actions";
 
 /*
@@ -64,6 +66,7 @@ export default async function GroupHome({
         </form>
       </div>
       <p>This month&rsquo;s Outing will appear here.</p>
+      <EnablePush />
     </main>
   );
 }
