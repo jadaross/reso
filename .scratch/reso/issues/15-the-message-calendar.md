@@ -50,3 +50,17 @@ computed it by string-slicing the month, which would have drifted the moment Clo
 The claim in `sent_messages` is written *before* the push is sent. A crash between the two loses a
 notification; the other order would send it twice on the next run, and a duplicate is much worse
 than a miss.
+
+## Changed after the fact
+
+Jada asked for a couple more nudges "just to make sure people use it". Two were added, both once per
+Outing like the rest:
+
+- **stock-up**, from ten days before Close Day, to everyone, only when the month's tier holds fewer
+  than three Picks. It names the shortage: "No cheap places on the list" or "Only 2 cheap places to
+  draw from". Conditional rather than scheduled, so a healthy list never triggers it.
+- **closing-soon**, two days before Close Day, to everyone: last chance to change your dates. This
+  one goes to everybody, where last-call goes only to the silent — they answer different questions.
+
+Eight messages now cover a month, and the walk-through confirms each fires exactly once on the right
+day with silence in between.

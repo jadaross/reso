@@ -3,7 +3,7 @@ import { and, eq, isNull } from "drizzle-orm";
 import { getDb } from "@/lib/db";
 import { members, type Member } from "@/lib/db/schema";
 
-import { currentMemberId, hasAdminUnlock } from "./session";
+import { currentMemberId } from "./session";
 
 /**
  * The Member this Device is, or null.
@@ -25,14 +25,17 @@ export async function currentMember(): Promise<Member | null> {
 }
 
 /**
- * Admin authority is two things at once: the Member is flagged as an Admin, and
- * this Device has entered the PIN recently. Neither alone is enough — the flag
- * only decides whether the app offers the prompt.
+ * Admin authority is the flag on the Member, and nothing else.
+ *
+ * There was a Group-wide PIN on top of this. Jada asked for it to go: she could not
+ * remember it, and a lock whose key gets forgotten is a lock on the wrong person.
+ * The trade is real and worth stating — anyone holding the Group Link can now tap
+ * "Jada" on the pick-your-name screen and have the Admin panel. The Group Link is
+ * the only gate left, which is the same gate everything else in Reso sits behind.
  */
 export async function currentAdmin(): Promise<Member | null> {
   const member = await currentMember();
-  if (!member?.isAdmin) return null;
-  return (await hasAdminUnlock()) ? member : null;
+  return member?.isAdmin ? member : null;
 }
 
 export async function requireAdmin(): Promise<Member> {

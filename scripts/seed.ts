@@ -13,7 +13,6 @@ import { eq, inArray } from "drizzle-orm";
 
 import { getDb } from "../lib/db";
 import { groupSecrets, groupSettings, members } from "../lib/db/schema";
-import { hashPin } from "../lib/identity/pin";
 import { generateGroupSecret } from "../lib/identity/token";
 
 function arg(name: string): string | undefined {
@@ -23,31 +22,19 @@ function arg(name: string): string | undefined {
 
 async function main() {
   const adminName = arg("admin");
-  const pin = arg("pin");
   const roster = (arg("members") ?? "")
     .split(",")
     .map((name) => name.trim())
     .filter(Boolean);
 
-  if (!adminName || !pin) {
-    console.error('Usage: tsx scripts/seed.ts --admin "Name" --pin 481625');
-    process.exit(1);
-  }
-
-  if (!/^\d{4,10}$/.test(pin)) {
-    console.error("The PIN should be 4 to 10 digits.");
+  if (!adminName) {
+    console.error('Usage: tsx scripts/seed.ts --admin "Name" [--members "A,B,C"]');
     process.exit(1);
   }
 
   const db = getDb();
 
-  await db
-    .insert(groupSettings)
-    .values({ id: 1, adminPinHash: await hashPin(pin) })
-    .onConflictDoUpdate({
-      target: groupSettings.id,
-      set: { adminPinHash: await hashPin(pin), updatedAt: new Date() },
-    });
+  await db.insert(groupSettings).values({ id: 1 }).onConflictDoNothing();
 
   const [existingAdmin] = await db
     .select({ id: members.id })

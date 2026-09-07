@@ -50,6 +50,11 @@ export const linkStatus = pgEnum("link_status", [
  */
 export const groupSettings = pgTable("group_settings", {
   id: integer("id").primaryKey().default(1),
+  /**
+   * DEAD. The Admin PIN was removed — being an Admin is now the flag on the Member
+   * and nothing else. Kept only because dropping a column needs a migration for no
+   * behavioural gain. Nothing reads or writes this.
+   */
   adminPinHash: text("admin_pin_hash"),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()

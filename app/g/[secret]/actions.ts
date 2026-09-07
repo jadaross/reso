@@ -4,14 +4,8 @@ import { and, eq, isNull } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
 import { getDb } from "@/lib/db";
-import { groupSettings, members } from "@/lib/db/schema";
-import { verifyPin } from "@/lib/identity/pin";
-import {
-  claimMember,
-  lockAdmin,
-  releaseMember,
-  unlockAdmin,
-} from "@/lib/identity/session";
+import { members } from "@/lib/db/schema";
+import { claimMember, releaseMember } from "@/lib/identity/session";
 
 export type ActionResult = { ok: true } | { ok: false; error: string };
 
@@ -56,40 +50,6 @@ export async function switchName(secret: string): Promise<ActionResult> {
   return { ok: true };
 }
 
-/**
- * Enter the Group-wide Admin PIN.
- *
- * NOTE: there is no attempt throttling yet. scrypt makes each guess cost ~100ms and
- * the site sits behind an unguessable Group Link, but a lockout policy was never
- * decided — it is flagged for the spec rather than invented here.
- */
-export async function enterAdminPin(
-  secret: string,
-  pin: string,
-): Promise<ActionResult> {
-  const [settings] = await getDb()
-    .select({ adminPinHash: groupSettings.adminPinHash })
-    .from(groupSettings)
-    .limit(1);
-
-  if (!settings?.adminPinHash) {
-    return { ok: false, error: "No Admin PIN has been set yet." };
-  }
-
-  if (!(await verifyPin(pin, settings.adminPinHash))) {
-    return { ok: false, error: "That PIN is not right." };
-  }
-
-  await unlockAdmin();
-  revalidatePath(`/g/${secret}`);
-  return { ok: true };
-}
-
-export async function lockAdminPanel(secret: string): Promise<ActionResult> {
-  await lockAdmin();
-  revalidatePath(`/g/${secret}`);
-  return { ok: true };
-}
 
 /* Form-bound wrappers, so the screens work without any client-side JavaScript. */
 

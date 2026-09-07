@@ -10,7 +10,6 @@ import styles from "../page.module.css";
 import { Shell } from "../shell";
 import { AddForm } from "./add-form";
 import { AddressControl, RetryLink, TierControl } from "./row-controls";
-import { Unlock } from "./unlock";
 import rows from "./restaurants.module.css";
 
 const TIER_LABEL: Record<PriceTier, string> = {
@@ -145,13 +144,6 @@ export default async function Restaurants({
               ))}
             </>
           ) : null}
-        </>
-      ) : member.isAdmin ? (
-        <>
-          <p className={rows.secret}>
-            Enter the PIN to see everyone&rsquo;s.
-          </p>
-          <Unlock secret={secret} />
         </>
       ) : null}
     </Shell>

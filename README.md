@@ -14,7 +14,7 @@ still open on the [wayfinder map](./.scratch/reso/map.md).
 | Area | State |
 | --- | --- |
 | Data model (Drizzle + Postgres) | Built |
-| Group Link, identity, Admin PIN | Built — [ticket 04](./.scratch/reso/issues/04-shared-link-identity.md) |
+| Group Link and per-Device identity | Built — [ticket 04](./.scratch/reso/issues/04-shared-link-identity.md) |
 | Tier Rotation, Chosen Date, the Draw | Built and tested |
 | Apple / Google Maps link parsing | Built and tested — [ticket 02](./.scratch/reso/issues/02-maps-link-parsing.md) |
 | Installable web app + Web Push | Built — [ticket 03](./.scratch/reso/issues/03-pwa-and-web-push-on-ios.md) |
@@ -22,9 +22,14 @@ still open on the [wayfinder map](./.scratch/reso/map.md).
 | **Every screen** | **Placeholder** — blocked on [ticket 06](./.scratch/reso/issues/06-look-and-feel-prototype.md) |
 | **Reminder and announcement wording** | **Not started** — blocked on [ticket 05](./.scratch/reso/issues/05-message-schedule-and-wording.md) |
 
-Two smaller things are deliberately unresolved in the code and marked where they
-sit: there is no Admin PIN lockout policy, and an Outing whose tier has no Picks
-closes with no Drawn Pick rather than falling through to another tier.
+An Outing whose tier has no Picks closes with no Drawn Pick rather than falling
+through to another tier, and tells the Admin.
+
+**There is no Admin PIN.** Being an Admin is a flag on the Member, so anyone holding
+the Group Link can tap Jada's name and get the Admin panel. That is a deliberate
+trade: the PIN existed to stop a friend casually rerolling the draw, and it was
+removed because a forgotten PIN locks out the one person who needs it. The Group
+Link is the only gate, which is the same gate everything else sits behind.
 
 ## It is live
 
@@ -72,7 +77,7 @@ The same variables need to exist in the Vercel project.
 
 ```bash
 pnpm db:migrate
-pnpm exec tsx scripts/seed.ts --admin "Jada" --pin <your-pin> \
+pnpm exec tsx scripts/seed.ts --admin "Jada" \
   --members "Lottie,Sienna,Scotty,Sophie,Jack"
 ```
 

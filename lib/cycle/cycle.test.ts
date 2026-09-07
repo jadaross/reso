@@ -258,6 +258,8 @@ describe("message wording", () => {
     answered: 4,
     total: 6,
     announcement: "October: Mangal 2 — Friday 16 October. 6 of us. Still needs booking.",
+    inTier: 1,
+    tierLabel: "cheap",
   };
 
   it("tells the group a month has opened, without saying how", () => {
@@ -277,6 +279,16 @@ describe("message wording", () => {
 
   it("names the place when asking for a rating", () => {
     assert.match(copyFor("rate", facts).title, /How was Mangal 2\?/);
+  });
+
+  it("says how thin the list is, in the plural that fits", () => {
+    assert.match(copyFor("stock-up", { ...facts, inTier: 0 }).title, /No cheap places/);
+    assert.match(copyFor("stock-up", { ...facts, inTier: 1 }).title, /Only 1 cheap place\b/);
+    assert.match(copyFor("stock-up", { ...facts, inTier: 2 }).title, /Only 2 cheap places/);
+  });
+
+  it("warns before the month closes without nagging about dates twice", () => {
+    assert.match(copyFor("closing-soon", facts).title, /closes in two days/);
   });
 
   it("does not print null when nothing was drawn", () => {

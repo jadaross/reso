@@ -15,6 +15,8 @@ import {
 import { sendToSubscriptions } from "@/lib/push/send";
 
 import { announcementText, monthName } from "./announcement";
+
+const TIER_WORD = { low: "cheap", medium: "middling", high: "expensive" } as const;
 import { closeDayFor, todayInLondon, type DayString } from "./dates";
 
 /**
@@ -31,7 +33,9 @@ import { closeDayFor, todayInLondon, type DayString } from "./dates";
  */
 export type MessageKind =
   | "opened"
+  | "stock-up"
   | "last-call"
+  | "closing-soon"
   | "announced"
   | "admin-nudge"
   | "day-before"
@@ -44,7 +48,9 @@ const CALENDAR: Record<
   { audience: Audience; tag: string }
 > = {
   opened: { audience: "everyone", tag: "month" },
+  "stock-up": { audience: "everyone", tag: "list" },
   "last-call": { audience: "silent", tag: "month" },
+  "closing-soon": { audience: "everyone", tag: "month" },
   announced: { audience: "everyone", tag: "month" },
   "admin-nudge": { audience: "admins", tag: "admin" },
   "day-before": { audience: "attending", tag: "dinner" },
@@ -59,6 +65,9 @@ export function copyFor(
     answered: number;
     total: number;
     announcement: string;
+    /** Picks in this month's tier. */
+    inTier: number;
+    tierLabel: string;
   },
 ): { title: string; body: string } {
   const month = monthName(facts.month);
@@ -68,6 +77,19 @@ export function copyFor(
       return {
         title: `${month} is open`,
         body: "Tap the evenings you can do.",
+      };
+    case "stock-up":
+      return {
+        title:
+          facts.inTier === 0
+            ? `No ${facts.tierLabel} places on the list`
+            : `Only ${facts.inTier} ${facts.tierLabel} ${facts.inTier === 1 ? "place" : "places"} to draw from`,
+        body: "Add somewhere you fancy — it takes ten seconds.",
+      };
+    case "closing-soon":
+      return {
+        title: `${month} closes in two days`,
+        body: "Last chance to change the evenings you can do.",
       };
     case "last-call":
       return {
@@ -201,7 +223,7 @@ export async function sendDueMessages(
     .where(inArray(outings.status, ["open", "announced", "done"]));
 
   for (const outing of live) {
-    const [tapped, going, plusOneRows, total, drawn] = await Promise.all([
+    const [tapped, going, plusOneRows, total, drawn, inTier] = await Promise.all([
       db
         .selectDistinct({ memberId: availability.memberId })
         .from(availability)
@@ -225,6 +247,7 @@ export async function sendDueMessages(
             .where(eq(picks.id, outing.drawnPickId))
             .limit(1)
         : Promise.resolve([]),
+      db.select({ id: picks.id }).from(picks).where(eq(picks.tier, outing.tier)),
     ]);
 
     const facts = {
@@ -232,6 +255,8 @@ export async function sendDueMessages(
       place: drawn[0]?.name ?? null,
       answered: tapped.length,
       total: total[0]?.n ?? 0,
+      inTier: inTier.length,
+      tierLabel: TIER_WORD[outing.tier],
       announcement: announcementText({
         month: outing.month,
         chosenDate: outing.chosenDate,
@@ -248,10 +273,24 @@ export async function sendDueMessages(
 
     if (outing.status === "open") {
       due.push("opened");
+
+      // Nudge the list when the month's tier is thin. Fires from the 5th, so there
+      // is time to act on it before Close Day rather than the morning of.
+      if (
+        today >= addDays(closeDayFor(outing.month), -10) &&
+        inTier.length < 3
+      ) {
+        due.push("stock-up");
+      }
+
       // A week before Close Day, derived from closeDayFor rather than restated —
       // the same rule the Draw uses, so the nudge cannot drift away from the close.
       if (today >= addDays(closeDayFor(outing.month), -7)) {
         due.push("last-call");
+      }
+
+      if (today >= addDays(closeDayFor(outing.month), -2)) {
+        due.push("closing-soon");
       }
     }
 

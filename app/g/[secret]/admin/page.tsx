@@ -7,14 +7,13 @@ import { daysInMonth } from "@/lib/cycle/dates";
 import { latestSettledOuting, openOuting } from "@/lib/cycle/month-view";
 import { getDb } from "@/lib/db";
 import { availability, draws, picks } from "@/lib/db/schema";
-import { currentAdmin, currentMember } from "@/lib/identity/guard";
+import { currentMember } from "@/lib/identity/guard";
 
 import styles from "../page.module.css";
 import { Shell } from "../shell";
 import { roster } from "./admin-actions";
 import admin from "./admin.module.css";
 import { Panel } from "./panel";
-import { Unlock } from "../restaurants/unlock";
 
 export default async function AdminPage({
   params,
@@ -33,17 +32,6 @@ export default async function AdminPage({
           Only Jada can add people or overrule the month. Everything else is
           everyone&rsquo;s.
         </p>
-      </Shell>
-    );
-  }
-
-  const unlocked = await currentAdmin();
-  if (!unlocked) {
-    return (
-      <Shell secret={secret} member={member} section="month">
-        <h1 className={styles.title}>Admin</h1>
-        <p className={styles.lede}>Enter your PIN to unlock this on this phone.</p>
-        <Unlock secret={secret} />
       </Shell>
     );
   }
@@ -79,7 +67,10 @@ export default async function AdminPage({
   return (
     <Shell secret={secret} member={member} section="month" eyebrow="Admin">
       <h1 className={styles.title}>Admin</h1>
-      <p className={admin.hint}>Unlocked on this phone for 30 days.</p>
+      <p className={admin.hint}>
+        Only you see this. Anyone who taps your name gets it too, so keep the group
+        link to the group.
+      </p>
       <Panel
         secret={secret}
         people={people}

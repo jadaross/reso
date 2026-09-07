@@ -42,3 +42,20 @@ Attendance correction after the fact, which ticket 14 handed over, is covered by
 changing the Chosen Date on a closed Outing rebuilds who is going from Availability on the new day.
 A free-form attendance editor was not built — nobody asked for one and the date override covers the
 case that actually happens.
+
+## Changed after the fact
+
+Jada: "Can you remove the admin pin unlock at the bottom? Just set me as the admin, Jada. I can't
+remember."
+
+The PIN is gone entirely — the module, the second cookie, the unlock screens, and the seed argument.
+Being an Admin is now the flag on the Member and nothing else.
+
+The trade is real and is written into `lib/identity/guard.ts` rather than left implicit: anyone
+holding the Group Link can tap "Jada" on the pick-your-name screen and have the panel, including
+rotating the link and removing people. The PIN existed to stop a friend casually rerolling the draw.
+Against that, a lock whose key gets forgotten locks out the one person who needs it — and the Group
+Link was always the real gate.
+
+`group_settings.admin_pin_hash` stays in the schema, unused, because dropping a column needs a
+migration for no behavioural gain. It is documented as dead.
