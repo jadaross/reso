@@ -4,12 +4,13 @@ import { redirect } from "next/navigation";
 import { openOuting } from "@/lib/cycle/month-view";
 import { getDb } from "@/lib/db";
 import { members, picks, type PriceTier } from "@/lib/db/schema";
-import { currentMember } from "@/lib/identity/guard";
+import { currentAdmin, currentMember } from "@/lib/identity/guard";
 
 import styles from "../page.module.css";
 import { Shell } from "../shell";
 import { AddForm } from "./add-form";
 import { AddressControl, TierControl } from "./row-controls";
+import { Unlock } from "./unlock";
 import rows from "./restaurants.module.css";
 
 const TIER_LABEL: Record<PriceTier, string> = {
@@ -27,6 +28,8 @@ export default async function Restaurants({
   const member = await currentMember();
   if (!member) redirect(`/g/${secret}`);
 
+  const admin = await currentAdmin();
+
   const [all, outing] = await Promise.all([
     getDb()
       .select({
@@ -36,6 +39,7 @@ export default async function Restaurants({
         address: picks.address,
         linkStatus: picks.linkStatus,
         addedBy: members.name,
+        addedById: picks.memberId,
       })
       .from(picks)
       .innerJoin(members, eq(members.id, picks.memberId))
@@ -44,6 +48,17 @@ export default async function Restaurants({
   ]);
 
   const tier = outing?.tier;
+
+  // What everyone can see: how big the list is and how it splits by tier. Not which
+  // restaurants are on it — the pool is deliberately hidden so the Draw stays a
+  // surprise and nobody feels judged for what they put in.
+  const byTier = {
+    low: all.filter((p) => p.tier === "low").length,
+    medium: all.filter((p) => p.tier === "medium").length,
+    high: all.filter((p) => p.tier === "high").length,
+  };
+
+  const mine = group(all.filter((p) => p.addedById === member.id));
   const inDraw = group(tier ? all.filter((p) => p.tier === tier) : []);
   const rest = group(tier ? all.filter((p) => p.tier !== tier) : all);
 
@@ -56,49 +71,87 @@ export default async function Restaurants({
     >
       <h1 className={styles.title}>Restaurants</h1>
       <p className={styles.lede}>
-        Add anywhere you fancy. If someone else adds the same place, it goes into the
-        draw twice.
+        Add anywhere you fancy. Nobody sees the list, so the draw stays a surprise —
+        and if someone else adds the same place, it goes in twice.
       </p>
 
       <AddForm secret={secret} />
 
-      {all.length === 0 ? (
-        <p className={rows.empty}>
-          Nothing on the list yet. Whatever goes in first has good odds.
-        </p>
-      ) : null}
+      <div className={rows.counts}>
+        <span className={rows.countsTotal}>
+          {all.length === 1 ? "1 place" : `${all.length} places`}
+        </span>
+        <span className={rows.countsLine}>
+          {tier
+            ? `${byTier[tier]} of them are in this month's draw.`
+            : "No month is open, so nothing is in a draw yet."}
+        </span>
+        <div className={rows.tally}>
+          {(["low", "medium", "high"] as const).map((each) => (
+            <div
+              key={each}
+              className={
+                each === tier ? `${rows.tallyCell} ${rows.inDraw}` : rows.tallyCell
+              }
+            >
+              <span className={rows.tallyCount}>{byTier[each]}</span>
+              <span className={rows.tallyLabel}>{TIER_LABEL[each]}</span>
+            </div>
+          ))}
+        </div>
+      </div>
 
-      {tier && inDraw.length > 0 ? (
+      {mine.length > 0 ? (
         <>
-          <div className={rows.groupHead}>
-            In the draw this month &mdash; {TIER_LABEL[tier]}
-          </div>
-          {inDraw.map((entry) => (
+          <div className={rows.groupHead}>Yours</div>
+          {mine.map((entry) => (
             <Row key={entry.key} secret={secret} entry={entry} />
           ))}
         </>
-      ) : null}
-
-      {tier && inDraw.length === 0 && all.length > 0 ? (
+      ) : (
         <p className={rows.empty}>
-          Nothing in this month&rsquo;s {TIER_LABEL[tier].toLowerCase()} tier yet, so
-          there is nothing to draw from. Add somewhere, or ask Jada to change the tier.
+          You haven&rsquo;t added anywhere yet. You only ever see your own.
         </p>
-      ) : null}
+      )}
 
-      {rest.length > 0 ? (
+      {admin ? (
         <>
           <div className={rows.groupHead}>
-            {tier ? "Waiting for another kind of month" : "On the list"}
+            Everyone&rsquo;s &mdash; in the draw this month
+            {tier ? ` (${TIER_LABEL[tier]})` : ""}
           </div>
-          {rest.map((entry) => (
-            <Row
-              key={entry.key}
-              secret={secret}
-              entry={entry}
-              dimmed={Boolean(tier)}
-            />
-          ))}
+          {inDraw.length === 0 ? (
+            <p className={rows.empty}>
+              Nothing in this month&rsquo;s tier, so there is nothing to draw from.
+            </p>
+          ) : (
+            inDraw.map((entry) => (
+              <Row key={`d-${entry.key}`} secret={secret} entry={entry} />
+            ))
+          )}
+
+          {rest.length > 0 ? (
+            <>
+              <div className={rows.groupHead}>
+                Everyone&rsquo;s &mdash; waiting for another kind of month
+              </div>
+              {rest.map((entry) => (
+                <Row
+                  key={`r-${entry.key}`}
+                  secret={secret}
+                  entry={entry}
+                  dimmed
+                />
+              ))}
+            </>
+          ) : null}
+        </>
+      ) : member.isAdmin ? (
+        <>
+          <p className={rows.secret}>
+            Enter the PIN to see everyone&rsquo;s.
+          </p>
+          <Unlock secret={secret} />
         </>
       ) : null}
     </Shell>

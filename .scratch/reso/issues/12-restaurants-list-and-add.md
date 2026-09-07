@@ -34,3 +34,27 @@ that row updates every Pick behind it, so a restaurant cannot end up split acros
 
 The tier control is a native `select` sitting invisibly over the £ badge, so a phone shows its own
 picker rather than a bespoke one.
+
+## Changed after the fact
+
+Jada, after seeing it working: the pool should be hidden. "We don't want to show them. Maybe we can
+say how many are in the big bucket, how many are in low, medium, high — but only the admin should be
+able to see which ones are in there."
+
+So the list is now three things depending on who is looking:
+
+- **Counts, for everyone.** How many places are on the list and how they split across the tiers,
+  with this month's tier marked. Enough to know whether the pool is healthy without seeing it.
+- **Your own Picks, for everyone.** Kept visible deliberately. If you cannot see what you added you
+  will eventually add the same place twice, and since a Pick is a ticket in the Draw that would be
+  voting for yourself twice by accident.
+- **The whole list, for an unlocked Admin.** Somebody has to be able to fix a wrong tier or a
+  missing address.
+
+This pulled a small piece of ticket 16 forward: the Admin PIN unlock now exists on this screen,
+because otherwise the full list would be unreachable by anyone. The rest of the Admin panel is
+still ticket 16.
+
+One acceptance criterion above is now narrower than it reads. "Any Member can change the tier"
+holds for your own Picks; correcting someone else's is an Admin job, because you cannot correct what
+you cannot see.

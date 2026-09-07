@@ -46,33 +46,35 @@ the dinner everyone rates it.
 16. As a Member, I want to say whether a restaurant is cheap, middling or expensive when I add it, so that it lands in the right kind of month.
 17. As a Member, I want to correct another Member's price tier, so that one person's guess is not permanent.
 18. As a Member, I want to add a restaurant that someone else already added, so that wanting it twice makes it twice as likely.
-19. As a Member, I want to see which restaurants are in this month's draw and which are waiting for a dearer month, so that the list makes sense.
-20. As a Member, I want to see who added each restaurant, so that I can ask them about it.
-21. As a Member, I want to be told when a new month opens for availability, so that I do not have to remember.
-22. As a Member who has not filled anything in, I want a single nudge a week before Close Day, so that I am reminded once and not nagged.
-23. As a Member who has already answered, I want to not get the nudge, so that the app does not train me to ignore it.
-24. As a Member, I want to be told the date and the restaurant the moment they are settled, so that I can put it in my calendar.
-25. As a Member, I want to be reminded the day before the dinner, so that I turn up.
-26. As a Member, I want to be asked to rate the place the day after, so that the history is worth having.
-27. As a Member, I want to rate a Visit out of five and leave a short note, so that we remember which ones were worth repeating.
-28. As a Member, I want to see the history of where we have been and how it scored, so that the group has a record.
-29. As a Member, I want to know the table is not booked yet, so that nobody assumes someone else did it.
-30. As the Admin, I want a message written for me that I forward to WhatsApp in two taps, so that telling the group costs nothing.
-31. As the Admin, I want to be nudged if I have not forwarded the announcement, so that a decided month does not go untold.
-32. As the Admin, I want to add a Member by typing their name, so that new friends can join.
-33. As the Admin, I want to see which added names have never been opened, so that I can chase people before Close Day.
-34. As the Admin, I want to archive a Member who has left, so that they stop counting toward availability without erasing them from past Visits.
-35. As the Admin, I want to unlock admin actions with a PIN, so that a friend cannot casually reroll the draw or remove someone.
-36. As the Admin, I want the unlock to last a month on my phone, so that I am not typing a PIN constantly.
-37. As the Admin, I want to override this month's price tier, so that a birthday can be an expensive month out of turn.
-38. As the Admin, I want to see the top few dates and pick a different one, so that the arithmetic does not overrule something I know.
-39. As the Admin, I want to redraw once when the drawn place is shut or unbookable, so that a dead pick does not kill the month.
-40. As a Member, I want a reroll to be visible in the month's history, so that nobody quietly re-rolls until they get what they want.
-41. As the Admin, I want to close availability early once everyone is in, so that we do not wait until the 15th unnecessarily.
-42. As the Admin, I want to be told when the month's tier has no restaurants in it, so that I can add one or change the tier.
-43. As the Admin, I want to rotate the Group Link if it leaks, so that people who already installed the app are unaffected.
-44. As a Member, I want the site to be legible in bright daylight on a phone, so that it works when I am outside.
-45. As a Member, I want the site to cost nobody anything to run, so that it survives indefinitely.
+19. As a Member, I want to see how many restaurants are on the list and how they split across the three tiers, so that I know whether the pool is healthy without seeing what is in it.
+20. As a Member, I want to see the places I added myself, so that I do not add the same one twice by accident.
+21. As a Member, I want everyone else's suggestions hidden from me, so that the draw is a surprise and nobody is judged for what they put in.
+22. As the Admin, I want to see the whole list with who added what, so that somebody can fix a wrong tier or a missing address.
+23. As a Member, I want to be told when a new month opens for availability, so that I do not have to remember.
+24. As a Member who has not filled anything in, I want a single nudge a week before Close Day, so that I am reminded once and not nagged.
+25. As a Member who has already answered, I want to not get the nudge, so that the app does not train me to ignore it.
+26. As a Member, I want to be told the date and the restaurant the moment they are settled, so that I can put it in my calendar.
+27. As a Member, I want to be reminded the day before the dinner, so that I turn up.
+28. As a Member, I want to be asked to rate the place the day after, so that the history is worth having.
+29. As a Member, I want to rate a Visit out of five and leave a short note, so that we remember which ones were worth repeating.
+30. As a Member, I want to see the history of where we have been and how it scored, so that the group has a record.
+31. As a Member, I want to know the table is not booked yet, so that nobody assumes someone else did it.
+32. As the Admin, I want a message written for me that I forward to WhatsApp in two taps, so that telling the group costs nothing.
+33. As the Admin, I want to be nudged if I have not forwarded the announcement, so that a decided month does not go untold.
+34. As the Admin, I want to add a Member by typing their name, so that new friends can join.
+35. As the Admin, I want to see which added names have never been opened, so that I can chase people before Close Day.
+36. As the Admin, I want to archive a Member who has left, so that they stop counting toward availability without erasing them from past Visits.
+37. As the Admin, I want to unlock admin actions with a PIN, so that a friend cannot casually reroll the draw or remove someone.
+38. As the Admin, I want the unlock to last a month on my phone, so that I am not typing a PIN constantly.
+39. As the Admin, I want to override this month's price tier, so that a birthday can be an expensive month out of turn.
+40. As the Admin, I want to see the top few dates and pick a different one, so that the arithmetic does not overrule something I know.
+41. As the Admin, I want to redraw once when the drawn place is shut or unbookable, so that a dead pick does not kill the month.
+42. As a Member, I want a reroll to be visible in the month's history, so that nobody quietly re-rolls until they get what they want.
+43. As the Admin, I want to close availability early once everyone is in, so that we do not wait until the 15th unnecessarily.
+44. As the Admin, I want to be told when the month's tier has no restaurants in it, so that I can add one or change the tier.
+45. As the Admin, I want to rotate the Group Link if it leaks, so that people who already installed the app are unaffected.
+46. As a Member, I want the site to be legible in bright daylight on a phone, so that it works when I am outside.
+47. As a Member, I want the site to cost nobody anything to run, so that it survives indefinitely.
 
 ## Implementation Decisions
 
@@ -115,6 +117,14 @@ Push failures delete dead subscriptions on 404 and 410 and never block the cycle
 Plus-ones. The `attendance` table is written at Close Day from Availability so that later edits to
 Availability cannot silently rewrite who came. The Admin can correct it from the Admin panel until
 the Visit is rated. This closes the open question on the map.
+
+**The pool of restaurants is hidden from everyone but the Admin.** Members see how many places
+are on the list and how those split across Low, Medium and High, plus their own Picks in full —
+their own, so that nobody adds the same place twice by accident and quietly gives themselves two
+tickets. Everyone else's suggestions stay invisible until the Draw names one. The Admin sees the
+whole list, behind the PIN, because somebody has to be able to fix a wrong tier or a missing
+address. A consequence worth stating: correcting another Member's tier is an Admin job now, not
+everyone's.
 
 **A Google-sourced Pick with no address** saves with the name, the area if the link gave one, and a
 quiet "no address yet" marker; any Member can fill the address in later by editing the Pick. The

@@ -188,3 +188,100 @@
   font-size: var(--step--1);
   cursor: pointer;
 }
+
+/* The counts everyone sees instead of the list. */
+.counts {
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  margin-bottom: 22px;
+}
+
+.countsTotal {
+  font-family: var(--font-bricolage), sans-serif;
+  font-weight: 700;
+  font-size: var(--step-3);
+  letter-spacing: -0.02em;
+  display: block;
+}
+
+.countsLine {
+  color: var(--muted);
+  font-size: var(--step--1);
+  margin-top: 4px;
+}
+
+.tally {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.tallyCell {
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  padding: 10px 4px;
+  text-align: center;
+}
+
+.tallyCell.inDraw {
+  border-color: var(--amber);
+}
+
+.tallyCount {
+  display: block;
+  font-family: var(--font-bricolage), sans-serif;
+  font-weight: 700;
+  font-size: var(--step-2);
+}
+
+.tallyLabel {
+  display: block;
+  font-size: var(--step--1);
+  color: var(--muted);
+  margin-top: 1px;
+}
+
+.inDraw .tallyLabel {
+  color: var(--amber);
+}
+
+.unlock {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: 18px;
+}
+
+.pin {
+  flex: 1;
+  min-width: 120px;
+  background: var(--raised);
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--radius);
+  color: var(--bone);
+  padding: 11px 12px;
+  font: inherit;
+}
+
+.unlock button {
+  background: none;
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--radius);
+  color: var(--bone);
+  padding: 11px 16px;
+  cursor: pointer;
+}
+
+.unlock .error {
+  flex-basis: 100%;
+}
+
+.secret {
+  font-size: var(--step--1);
+  color: var(--muted);
+  margin: 22px 0 0;
+  max-width: var(--measure);
+}
