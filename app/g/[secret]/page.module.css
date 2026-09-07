@@ -75,3 +75,11 @@
   font-weight: 500;
   margin-bottom: 6px;
 }
+
+.standing {
+  border-top: 1px solid var(--hairline);
+  margin-top: 20px;
+  padding-top: 16px;
+  color: var(--muted);
+  max-width: var(--measure);
+}

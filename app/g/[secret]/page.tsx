@@ -1,13 +1,17 @@
 import { asc, isNull } from "drizzle-orm";
 
 import { EnablePush } from "@/components/enable-push";
+import { loadMonthView, openOuting } from "@/lib/cycle/month-view";
 import { getDb } from "@/lib/db";
-import { members } from "@/lib/db/schema";
+import { members, type Member } from "@/lib/db/schema";
 import { currentMember } from "@/lib/identity/guard";
 
 import { claimNameForm } from "./actions";
+import { Calendar } from "./calendar";
 import styles from "./page.module.css";
 import { BareShell, Shell } from "./shell";
+
+const TIER_LABEL = { low: "Low", medium: "Medium", high: "High" } as const;
 
 export default async function GroupHome({
   params,
@@ -19,16 +23,80 @@ export default async function GroupHome({
 
   if (!member) return <PickYourName secret={secret} />;
 
+  const outing = await openOuting();
+  if (!outing) return <BetweenMonths secret={secret} member={member} />;
+
+  const view = await loadMonthView(outing, member.id);
+
+  return (
+    <Shell
+      secret={secret}
+      member={member}
+      section="month"
+      eyebrow={`${TIER_LABEL[view.tier]} month`}
+    >
+      <h1 className={styles.title}>{monthName(view.month)}</h1>
+      <p className={styles.lede}>
+        Tap every evening you could make. Closes {readableDay(view.closeDay)}.
+      </p>
+
+      <Calendar
+        secret={secret}
+        cells={view.cells}
+        mine={[...view.mine]}
+        freeByDay={Object.fromEntries(view.freeByDay)}
+        memberCount={view.memberCount}
+        myPlusOne={view.myPlusOne}
+        locked={false}
+      />
+
+      <p className={styles.standing}>{standing(view)}</p>
+      <EnablePush />
+    </Shell>
+  );
+}
+
+/** The line under the calendar: where the month has got to, in words. */
+function standing(view: Awaited<ReturnType<typeof loadMonthView>>): string {
+  const leader = view.leaders[0];
+  const waiting =
+    view.silentCount === 0
+      ? "Everyone has answered."
+      : `${view.silentCount} of ${view.memberCount} ${
+          view.silentCount === 1 ? "has" : "have"
+        } not answered yet.`;
+
+  if (!leader) return `Nobody has picked an evening yet. ${waiting}`;
+
+  return `${readableDay(leader.day)} leads with ${leader.count} of ${
+    view.memberCount
+  }. ${waiting}`;
+}
+
+function monthName(month: string): string {
+  return new Date(`${month}T00:00:00Z`).toLocaleDateString("en-GB", {
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+}
+
+function readableDay(day: string): string {
+  return new Date(`${day}T00:00:00Z`).toLocaleDateString("en-GB", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    timeZone: "UTC",
+  });
+}
+
+function BetweenMonths({ secret, member }: { secret: string; member: Member }) {
   return (
     <Shell secret={secret} member={member} section="month">
-      {/* The month itself is ticket 11 (the calendar) and ticket 13 (the reveal). */}
-      <h1 className={styles.title}>This month</h1>
-      <div className={styles.placeholder}>
-        <strong>The calendar lands next.</strong>
-        Tapping the evenings you can do, and seeing how many of the group can do
-        each one, is ticket 11. The reveal is ticket 13.
-      </div>
-      <EnablePush />
+      <h1 className={styles.title}>Nothing open</h1>
+      <p className={styles.lede}>
+        The next month opens on the 1st. Add somewhere you fancy in the meantime.
+      </p>
     </Shell>
   );
 }

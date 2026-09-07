@@ -76,3 +76,22 @@ export function openDayFor(month: MonthString): DayString {
 export function closeDayFor(month: MonthString): DayString {
   return `${addMonths(month, -1).slice(0, 7)}-15`;
 }
+
+/**
+ * The month laid out as calendar cells, Monday first, with leading and trailing
+ * blanks so the weeks line up under their headings.
+ *
+ * Monday first because the Group is British and a calendar that starts on Sunday
+ * puts the weekend either side of the week, which is exactly the part they are
+ * choosing between.
+ */
+export function calendarGrid(month: MonthString): (DayString | null)[] {
+  const days = daysInMonth(month);
+  // getUTCDay is Sunday-first; shift so Monday is 0.
+  const lead = (weekdayOf(days[0]) + 6) % 7;
+
+  const cells: (DayString | null)[] = Array<null>(lead).fill(null);
+  cells.push(...days);
+  while (cells.length % 7 !== 0) cells.push(null);
+  return cells;
+}
