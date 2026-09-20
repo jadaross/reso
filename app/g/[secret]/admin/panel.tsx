@@ -185,7 +185,7 @@ export function Panel({ secret, people, outing, topDays, emptyTier }: PanelProps
               </button>
             ) : null}
 
-            {outing.status !== "open" && !outing.rerolled ? (
+            {outing.status !== "open" && outing.kind !== "party" && !outing.rerolled ? (
               <button
                 type="button"
                 disabled={pending}
@@ -195,7 +195,7 @@ export function Panel({ secret, people, outing, topDays, emptyTier }: PanelProps
               </button>
             ) : null}
 
-            {outing.rerolled ? (
+            {outing.rerolled && outing.kind !== "party" ? (
               <span className={styles.hint}>
                 Already redrawn once this month.
               </span>
