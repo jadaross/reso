@@ -1,5 +1,14 @@
+/*
+ * The app shell fills the viewport and does not scroll; <main> does. That keeps
+ * the tab bar in normal flow at the bottom of a fixed-height column instead of
+ * position: fixed over a scrolling body, which iOS Safari is prone to leaving
+ * stranded halfway up the screen while its toolbar collapses.
+ *
+ * The body carries the top safe-area inset as padding, so the shell's height is
+ * the viewport minus that inset, not the whole viewport.
+ */
 .shell {
-  min-height: 100dvh;
+  height: calc(100dvh - env(safe-area-inset-top, 0px));
   display: flex;
   flex-direction: column;
   max-width: 520px;
@@ -7,6 +16,7 @@
 }
 
 .header {
+  flex: none;
   display: flex;
   align-items: baseline;
   justify-content: space-between;
@@ -33,28 +43,25 @@
 .eyebrow {
   font-size: var(--step--1);
   color: var(--muted);
+  text-align: right;
 }
 
 .main {
   flex: 1;
-  padding: 0 var(--gutter);
-  /* Clear of the tab bar and the home indicator. */
-  padding-bottom: calc(84px + env(safe-area-inset-bottom));
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  padding: 0 var(--gutter) 28px;
 }
 
 .nav {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  z-index: 10;
+  flex: none;
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  max-width: 520px;
-  margin: 0 auto;
   background: var(--field);
   border-top: 1px solid var(--hairline);
-  padding-bottom: env(safe-area-inset-bottom);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 .tab {

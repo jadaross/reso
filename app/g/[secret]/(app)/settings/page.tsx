@@ -6,7 +6,6 @@ import { todayInLondon } from "@/lib/cycle/dates";
 import { currentMember } from "@/lib/identity/guard";
 
 import styles from "../page.module.css";
-import { Shell } from "../shell";
 import settings from "./settings.module.css";
 import { Year } from "./year";
 
@@ -22,7 +21,7 @@ export default async function Settings({
   const months = await loadYear(member.id, todayInLondon());
 
   return (
-    <Shell secret={secret} member={member} section="settings">
+    <>
       <h1 className={styles.title}>Your year</h1>
       <p className={styles.lede}>
         Tap the evenings you already know you can do, as far ahead as you like.
@@ -42,6 +41,6 @@ export default async function Settings({
           Check the setup
         </Link>
       </section>
-    </Shell>
+    </>
   );
 }

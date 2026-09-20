@@ -6,8 +6,8 @@ import { getDb } from "@/lib/db";
 import { members, picks, type PriceTier } from "@/lib/db/schema";
 import { currentAdmin, currentMember } from "@/lib/identity/guard";
 
+import { Eyebrow } from "../frame";
 import styles from "../page.module.css";
-import { Shell } from "../shell";
 import { AddForm } from "./add-form";
 import { AddressControl, RemoveControl, RetryLink, TierControl } from "./row-controls";
 import rows from "./restaurants.module.css";
@@ -63,12 +63,8 @@ export default async function Restaurants({
   const rest = group(tier ? all.filter((p) => p.tier !== tier) : all);
 
   return (
-    <Shell
-      secret={secret}
-      member={member}
-      section="restaurants"
-      eyebrow={all.length === 1 ? "1 place" : `${all.length} places`}
-    >
+    <>
+      <Eyebrow text={all.length === 1 ? "1 place" : `${all.length} places`} />
       <h1 className={styles.title}>Restaurants</h1>
       <p className={styles.lede}>
         Add anywhere you fancy. Nobody sees the list, so the draw stays a surprise —
@@ -151,7 +147,7 @@ export default async function Restaurants({
           ) : null}
         </>
       ) : null}
-    </Shell>
+    </>
   );
 }
 

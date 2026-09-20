@@ -9,8 +9,8 @@ import { getDb } from "@/lib/db";
 import { availability, draws, picks } from "@/lib/db/schema";
 import { currentMember } from "@/lib/identity/guard";
 
+import { Eyebrow } from "../frame";
 import styles from "../page.module.css";
-import { Shell } from "../shell";
 import { roster } from "./admin-actions";
 import admin from "./admin.module.css";
 import { Panel } from "./panel";
@@ -26,13 +26,13 @@ export default async function AdminPage({
 
   if (!member.isAdmin) {
     return (
-      <Shell secret={secret} member={member} section="month">
+      <>
         <h1 className={styles.title}>Not for you</h1>
         <p className={styles.lede}>
           Only Jada can add people or overrule the month. Everything else is
           everyone&rsquo;s.
         </p>
-      </Shell>
+      </>
     );
   }
 
@@ -65,7 +65,8 @@ export default async function AdminPage({
   }
 
   return (
-    <Shell secret={secret} member={member} section="month" eyebrow="Admin">
+    <>
+      <Eyebrow text="Admin" />
       <h1 className={styles.title}>Admin</h1>
       <p className={admin.hint}>
         Only you see this. Anyone who taps your name gets it too, so keep the group
@@ -90,6 +91,6 @@ export default async function AdminPage({
         topDays={topDays}
         emptyTier={emptyTier}
       />
-    </Shell>
+    </>
   );
 }

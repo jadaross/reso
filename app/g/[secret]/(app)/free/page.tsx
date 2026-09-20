@@ -5,7 +5,6 @@ import { todayInLondon } from "@/lib/cycle/dates";
 import { currentMember } from "@/lib/identity/guard";
 
 import styles from "../page.module.css";
-import { Shell } from "../shell";
 import { Everyone } from "./everyone";
 
 /**
@@ -29,13 +28,13 @@ export default async function Free({
   const everyone = await loadEveryone(today);
 
   return (
-    <Shell secret={secret} member={member} section="free" eyebrow="Who's free">
+    <>
       <h1 className={styles.title}>Who&rsquo;s free</h1>
       <p className={styles.lede}>
         Everyone&rsquo;s evenings, as far ahead as they&rsquo;ve said. Pick the
         people, then look for a night.
       </p>
       <Everyone data={everyone} me={member.id} today={today} />
-    </Shell>
+    </>
   );
 }

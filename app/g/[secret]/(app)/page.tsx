@@ -15,15 +15,15 @@ import {
 import { todayInLondon } from "@/lib/cycle/dates";
 import { isSettled, loadVote, rotaFor, voteMonthFor } from "@/lib/cycle/vote";
 import { getDb } from "@/lib/db";
-import { members, type Member } from "@/lib/db/schema";
+import { members } from "@/lib/db/schema";
 import { currentAdmin, currentMember } from "@/lib/identity/guard";
 
 import { claimNameForm } from "./actions";
 import { Calendar } from "./calendar";
 import { Rate } from "./rate";
 import { Reveal } from "./reveal";
+import { Eyebrow } from "./frame";
 import styles from "./page.module.css";
-import { BareShell, Shell } from "./shell";
 import { Vote } from "./vote";
 import { InTheRunning } from "./in-the-running";
 
@@ -46,7 +46,7 @@ export default async function GroupHome({
   // which is what people open the app for between the 15th and the dinner.
   if (!outing) {
     const settled = await latestSettledOuting();
-    if (!settled) return <BetweenMonths secret={secret} member={member} />;
+    if (!settled) return <BetweenMonths />;
 
     const reveal = await loadReveal(settled);
     const admin = await currentAdmin();
@@ -63,16 +63,14 @@ export default async function GroupHome({
       : null;
 
     return (
-      <Shell
-        secret={secret}
-        member={member}
-        section="month"
-        eyebrow={
-          settled.kind === "party"
-            ? "Dinner party"
-            : `${TIER_LABEL[settled.tier]} month`
-        }
-      >
+      <>
+        <Eyebrow
+          text={
+            settled.kind === "party"
+              ? "Dinner party"
+              : `${TIER_LABEL[settled.tier]} month`
+          }
+        />
         {/* No heading: the ticket carries the month, and printing it twice above
             its own stamp is the sort of thing that makes a screen feel generated. */}
         <Reveal data={reveal} outingId={settled.id} isAdmin={Boolean(admin)} />
@@ -86,21 +84,19 @@ export default async function GroupHome({
         ) : null}
         {vote ? <Vote secret={secret} view={vote} me={member.name} /> : null}
         <FinishSetup secret={secret} />
-      </Shell>
+      </>
     );
   }
 
   const view = await loadMonthView(outing, member.id);
 
   return (
-    <Shell
-      secret={secret}
-      member={member}
-      section="month"
-      eyebrow={
-        view.kind === "party" ? "Dinner party" : `${TIER_LABEL[view.tier]} month`
-      }
-    >
+    <>
+      <Eyebrow
+        text={
+          view.kind === "party" ? "Dinner party" : `${TIER_LABEL[view.tier]} month`
+        }
+      />
       <h1 className={styles.title}>{monthName(view.month)}</h1>
       <p className={styles.lede}>
         Tap every evening you could make. Closes {readableDay(view.closeDay)}.
@@ -134,7 +130,7 @@ export default async function GroupHome({
 
       {vote ? <Vote secret={secret} view={vote} me={member.name} /> : null}
       <FinishSetup secret={secret} />
-    </Shell>
+    </>
   );
 }
 
@@ -177,14 +173,14 @@ function readableDay(day: string): string {
   });
 }
 
-function BetweenMonths({ secret, member }: { secret: string; member: Member }) {
+function BetweenMonths() {
   return (
-    <Shell secret={secret} member={member} section="month">
+    <>
       <h1 className={styles.title}>Nothing open</h1>
       <p className={styles.lede}>
         The next month opens on the 1st. Add somewhere you fancy in the meantime.
       </p>
-    </Shell>
+    </>
   );
 }
 
@@ -196,7 +192,7 @@ async function PickYourName({ secret }: { secret: string }) {
     .orderBy(asc(members.name));
 
   return (
-    <BareShell>
+    <>
       <h1 className={styles.title}>Who are you?</h1>
       {roster.length === 0 ? (
         <p className={styles.empty}>
@@ -218,6 +214,6 @@ async function PickYourName({ secret }: { secret: string }) {
         Tap your name once and this phone will remember it. If you add Reso to your
         Home Screen afterwards, tap it once more inside the app.
       </p>
-    </BareShell>
+    </>
   );
 }

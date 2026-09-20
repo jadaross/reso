@@ -4,8 +4,8 @@ import { monthName, readableDate } from "@/lib/cycle/announcement";
 import { loadVisits } from "@/lib/cycle/month-view";
 import { currentMember } from "@/lib/identity/guard";
 
+import { Eyebrow } from "../frame";
 import styles from "../page.module.css";
-import { Shell } from "../shell";
 import rows from "./history.module.css";
 
 const TIER_LABEL = { low: "Low", medium: "Medium", high: "High" } as const;
@@ -22,12 +22,8 @@ export default async function History({
   const visits = await loadVisits();
 
   return (
-    <Shell
-      secret={secret}
-      member={member}
-      section="history"
-      eyebrow={visits.length === 1 ? "1 dinner" : `${visits.length} dinners`}
-    >
+    <>
+      <Eyebrow text={visits.length === 1 ? "1 dinner" : `${visits.length} dinners`} />
       <h1 className={styles.title}>Where we&rsquo;ve been</h1>
 
       {visits.length === 0 ? (
@@ -83,6 +79,6 @@ export default async function History({
           ) : null}
         </article>
       ))}
-    </Shell>
+    </>
   );
 }
