@@ -285,3 +285,32 @@
   margin: 22px 0 0;
   max-width: var(--measure);
 }
+
+/* "remove" sits in the meta line, as quiet as the address link beside it. */
+.quiet {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--muted);
+  font: inherit;
+  font-size: var(--step--1);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--hairline-strong);
+}
+
+.confirm {
+  display: inline-flex;
+  gap: 10px;
+}
+
+.confirmYes {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--amber);
+  font: inherit;
+  font-size: var(--step--1);
+  cursor: pointer;
+}

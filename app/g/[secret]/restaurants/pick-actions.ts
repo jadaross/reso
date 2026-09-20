@@ -1,10 +1,10 @@
 "use server";
 
-import { inArray } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
 import { getDb } from "@/lib/db";
-import { picks, type PriceTier } from "@/lib/db/schema";
+import { draws, picks, type PriceTier } from "@/lib/db/schema";
 import { currentMember } from "@/lib/identity/guard";
 import { isFetchableUrl } from "@/lib/maps/parse";
 import { resolvePlaceLink } from "@/lib/maps/resolve";
@@ -164,4 +164,44 @@ export async function retryLink(
     ok: true,
     note: parsed.address ? "Got it." : "Got the place, but no address.",
   };
+}
+
+export type RemoveResult = { ok: true } | { ok: false; error: string };
+
+/**
+ * Take your own Pick off the list.
+ *
+ * Only your own: the list shows a place once however many people want it, but
+ * each Pick is one person's ticket and nobody hands in someone else's. A Pick
+ * that has already been drawn stays, because the history of where the Group went
+ * hangs off it — the row is what the Reveal and the Visit name.
+ */
+export async function removePick(
+  secret: string,
+  pickIds: string[],
+): Promise<RemoveResult> {
+  const member = await currentMember();
+  if (!member) return { ok: false, error: "Pick your name first." };
+  if (pickIds.length === 0) return { ok: true };
+
+  const db = getDb();
+  const mine = and(inArray(picks.id, pickIds), eq(picks.memberId, member.id));
+
+  const drawn = await db
+    .select({ pickId: draws.pickId })
+    .from(draws)
+    .innerJoin(picks, eq(picks.id, draws.pickId))
+    .where(mine)
+    .limit(1);
+
+  if (drawn.length > 0) {
+    return {
+      ok: false,
+      error: "This one has been drawn before, so it stays for the history.",
+    };
+  }
+
+  await db.delete(picks).where(mine);
+  revalidatePath(`/g/${secret}/restaurants`);
+  return { ok: true };
 }

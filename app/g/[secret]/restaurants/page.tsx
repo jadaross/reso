@@ -9,7 +9,7 @@ import { currentAdmin, currentMember } from "@/lib/identity/guard";
 import styles from "../page.module.css";
 import { Shell } from "../shell";
 import { AddForm } from "./add-form";
-import { AddressControl, RetryLink, TierControl } from "./row-controls";
+import { AddressControl, RemoveControl, RetryLink, TierControl } from "./row-controls";
 import rows from "./restaurants.module.css";
 
 const TIER_LABEL: Record<PriceTier, string> = {
@@ -104,7 +104,7 @@ export default async function Restaurants({
         <>
           <div className={rows.groupHead}>Yours</div>
           {mine.map((entry) => (
-            <Row key={entry.key} secret={secret} entry={entry} />
+            <Row key={entry.key} secret={secret} entry={entry} removable />
           ))}
         </>
       ) : (
@@ -207,10 +207,13 @@ function Row({
   secret,
   entry,
   dimmed = false,
+  removable = false,
 }: {
   secret: string;
   entry: Entry;
   dimmed?: boolean;
+  /** True in "Yours": every Pick in the row is the reader's own, so they can take it back. */
+  removable?: boolean;
 }) {
   const tickets = entry.pickIds.length;
 
@@ -229,6 +232,12 @@ function Row({
           &middot; {list(entry.addedBy)}
           {tickets > 1 ? (
             <span className={rows.wanted}> &middot; {tickets} tickets in the draw</span>
+          ) : null}
+          {removable ? (
+            <>
+              {" "}
+              &middot; <RemoveControl secret={secret} pickIds={entry.pickIds} />
+            </>
           ) : null}
         </div>
       </div>

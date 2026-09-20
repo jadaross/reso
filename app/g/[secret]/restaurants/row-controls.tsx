@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 
 import type { PriceTier } from "@/lib/db/schema";
 
-import { retryLink, setAddress, setTier } from "./pick-actions";
+import { removePick, retryLink, setAddress, setTier } from "./pick-actions";
 import styles from "./restaurants.module.css";
 
 const MARK: Record<PriceTier, string> = { low: "£", medium: "££", high: "£££" };
@@ -120,5 +120,62 @@ export function RetryLink({
     >
       {pending ? "trying the link\u2026" : "link didn\u2019t read \u2014 try again"}
     </button>
+  );
+}
+
+/**
+ * Remove one of your own Picks. Two taps, both on the page: a browser dialog would
+ * be the only one in the app, and a place off the list is not lost — anyone who
+ * still wants it adds it again in ten seconds.
+ */
+export function RemoveControl({
+  secret,
+  pickIds,
+}: {
+  secret: string;
+  pickIds: string[];
+}) {
+  const [asking, setAsking] = useState(false);
+  const [pending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+
+  if (error) return <span className={styles.meta}>{error}</span>;
+
+  if (!asking) {
+    return (
+      <button
+        type="button"
+        className={styles.quiet}
+        onClick={() => setAsking(true)}
+      >
+        remove
+      </button>
+    );
+  }
+
+  return (
+    <span className={styles.confirm}>
+      <button
+        type="button"
+        className={styles.confirmYes}
+        disabled={pending}
+        onClick={() =>
+          startTransition(async () => {
+            const result = await removePick(secret, pickIds);
+            if (!result.ok) setError(result.error);
+          })
+        }
+      >
+        {pending ? "removing\u2026" : "yes, remove it"}
+      </button>
+      <button
+        type="button"
+        className={styles.quiet}
+        disabled={pending}
+        onClick={() => setAsking(false)}
+      >
+        keep
+      </button>
+    </span>
   );
 }
