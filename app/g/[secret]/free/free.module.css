@@ -1,0 +1,178 @@
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.chip {
+  background: transparent;
+  border: 1px solid var(--hairline-strong);
+  border-radius: 999px;
+  color: var(--muted);
+  padding: 7px 12px;
+  font-size: var(--step--1);
+  cursor: pointer;
+}
+
+.chipAll {
+  border-style: dashed;
+}
+
+.chipOn {
+  background: var(--bone);
+  border-color: var(--bone);
+  border-style: solid;
+  color: var(--bone-ink);
+  font-weight: 500;
+}
+
+.switch {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.month {
+  font-family: var(--font-bricolage), sans-serif;
+  font-size: var(--step-2);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+.year {
+  color: var(--muted);
+  font-family: var(--font-inter-tight), sans-serif;
+  font-weight: 400;
+  font-size: var(--step--1);
+  letter-spacing: 0;
+  margin-left: 8px;
+}
+
+.arrows {
+  display: flex;
+  gap: 6px;
+}
+
+.arrows button {
+  width: 36px;
+  height: 36px;
+  background: transparent;
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--radius);
+  color: var(--bone);
+  font-size: var(--step-1);
+  cursor: pointer;
+}
+
+.arrows button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 5px;
+}
+
+.dow {
+  font-size: var(--step--1);
+  color: var(--muted);
+  text-align: center;
+  padding-bottom: 4px;
+}
+
+.day {
+  aspect-ratio: 1;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--bone);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.date {
+  font-size: var(--step-0);
+  line-height: 1;
+}
+
+.past .date {
+  color: var(--muted);
+}
+
+/* One dot per person picked, lit when they can do it. */
+.dots {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 2px;
+  width: 70%;
+  min-height: 5px;
+}
+
+.dots i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--hairline-strong);
+}
+
+.dots i.lit {
+  background: var(--bone);
+}
+
+/* Everyone picked can do this one. */
+.all {
+  border-color: var(--amber);
+}
+
+.all .date {
+  color: var(--amber);
+  font-weight: 600;
+}
+
+.all .dots i.lit {
+  background: var(--amber);
+}
+
+.picked {
+  background: var(--raised);
+  border-color: var(--bone);
+}
+
+.hint,
+.detail {
+  border-top: 1px solid var(--hairline);
+  margin-top: 14px;
+  padding-top: 12px;
+  font-size: var(--step--1);
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.detail strong {
+  display: block;
+  color: var(--bone);
+  font-weight: 600;
+  font-size: var(--step-0);
+  margin-bottom: 2px;
+}
+
+.can {
+  color: var(--bone);
+}
+
+.cannot {
+  color: var(--muted);
+}

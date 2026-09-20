@@ -207,3 +207,71 @@ export async function seedFromAdvance(
 
   return rows.length;
 }
+
+export type Everyone = {
+  /** This month and the year after it, in order. */
+  months: MonthString[];
+  people: { id: string; name: string }[];
+  /** Who is free on each day, as Member ids. Days nobody can do are absent. */
+  free: Record<DayString, string[]>;
+};
+
+/**
+ * Everyone's answers across the year ahead, for the Free tab.
+ *
+ * Months with an Outing read that Outing's Availability; months without one
+ * read Advance Availability. Together they are every day anyone has said yes
+ * to, which is what someone planning a birthday or a weekend away needs and the
+ * month screen, being about one dinner, does not show.
+ */
+export async function loadEveryone(today: DayString): Promise<Everyone> {
+  const db = getDb();
+  const months = [monthOf(today), ...monthsAhead(today)];
+  const first = months[0];
+  const end = addMonths(months[months.length - 1], 1);
+
+  const [people, existing] = await Promise.all([
+    db
+      .select({ id: members.id, name: members.name })
+      .from(members)
+      .where(isNull(members.archivedAt))
+      .orderBy(members.name),
+    db
+      .select({ id: outings.id, month: outings.month })
+      .from(outings)
+      .where(inArray(outings.month, months)),
+  ]);
+
+  const live = new Set(people.map((person) => person.id));
+  const withOuting = new Set(existing.map((outing) => outing.month));
+
+  const [tapped, ahead] = await Promise.all([
+    existing.length > 0
+      ? db
+          .select({ memberId: availability.memberId, day: availability.day })
+          .from(availability)
+          .where(
+            inArray(
+              availability.outingId,
+              existing.map((outing) => outing.id),
+            ),
+          )
+      : Promise.resolve([]),
+    db
+      .select({ memberId: advanceAvailability.memberId, day: advanceAvailability.day })
+      .from(advanceAvailability)
+      .where(and(gte(advanceAvailability.day, first), lt(advanceAvailability.day, end))),
+  ]);
+
+  const free: Record<DayString, string[]> = {};
+  const add = (row: { memberId: string; day: DayString }) => {
+    if (!live.has(row.memberId)) return;
+    (free[row.day] ??= []).push(row.memberId);
+  };
+  for (const row of tapped) add(row);
+  // An Outing's own rows are the answer for its month; advance rows for such a
+  // month are leftovers and are not counted twice.
+  for (const row of ahead) if (!withOuting.has(monthOf(row.day))) add(row);
+
+  return { months, people, free };
+}

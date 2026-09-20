@@ -22,7 +22,7 @@ import { Rate } from "./rate";
 import { Reveal } from "./reveal";
 import styles from "./page.module.css";
 import { BareShell, Shell } from "./shell";
-import { WhoIsFree } from "./who-is-free";
+import { InTheRunning } from "./in-the-running";
 
 const TIER_LABEL = { low: "Low", medium: "Medium", high: "High" } as const;
 
@@ -105,10 +105,12 @@ export default async function GroupHome({
 
       <p className={styles.standing}>{standing(view)}</p>
 
-      <WhoIsFree
+      <InTheRunning
+        leaders={view.leaders}
         whoByDay={view.whoByDay}
-        leaders={view.leaders.map((tally) => tally.day)}
+        answered={view.answeredNames}
         silent={view.silentNames}
+        memberCount={view.memberCount}
       />
 
       <p className={styles.aside}>

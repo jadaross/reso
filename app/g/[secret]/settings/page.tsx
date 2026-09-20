@@ -22,7 +22,7 @@ export default async function Settings({
   const months = await loadYear(member.id, todayInLondon());
 
   return (
-    <Shell secret={secret} member={member} section="settings" eyebrow="Settings">
+    <Shell secret={secret} member={member} section="settings">
       <h1 className={styles.title}>Your year</h1>
       <p className={styles.lede}>
         Tap the evenings you already know you can do, as far ahead as you like.

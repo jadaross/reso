@@ -5,7 +5,7 @@ import type { Member } from "@/lib/db/schema";
 import { switchNameForm } from "./actions";
 import styles from "./shell.module.css";
 
-export type Section = "month" | "restaurants" | "history" | "settings";
+export type Section = "month" | "free" | "restaurants" | "history" | "settings";
 
 /**
  * The frame every signed-in screen sits inside.
@@ -29,9 +29,11 @@ export function Shell({
   eyebrow?: string;
   children: React.ReactNode;
 }) {
-  // Only Admins are shown the way in. The PIN is what actually gates it; this just
-  // keeps a door nobody else can open out of everyone else's way.
+  // Only Admins are shown the way in. Being an Admin is what actually gates it;
+  // this just keeps a door nobody else can open out of everyone else's way.
   const adminHref = member.isAdmin ? `/g/${secret}/admin` : null;
+  // Settings is set-and-forget, so it lives up here rather than taking a tab.
+  const settingsHref = `/g/${secret}/settings`;
   return (
     <div className={styles.shell}>
       <header className={styles.header}>
@@ -44,9 +46,17 @@ export function Shell({
         </form>
         <span className={styles.eyebrow}>
           {eyebrow}
+          {eyebrow ? " · " : ""}
+          <Link
+            href={settingsHref}
+            className={styles.headerLink}
+            aria-current={section === "settings" ? "page" : undefined}
+          >
+            Settings
+          </Link>
           {adminHref ? (
             <>
-              {eyebrow ? " · " : ""}
+              {" · "}
               <Link href={adminHref} className={styles.adminLink}>
                 Admin
               </Link>
@@ -59,6 +69,7 @@ export function Shell({
 
       <nav className={styles.nav} aria-label="Sections">
         <Tab href={`/g/${secret}`} label="Month" on={section === "month"} />
+        <Tab href={`/g/${secret}/free`} label="Free" on={section === "free"} />
         <Tab
           href={`/g/${secret}/restaurants`}
           label="Restaurants"
@@ -68,11 +79,6 @@ export function Shell({
           href={`/g/${secret}/history`}
           label="History"
           on={section === "history"}
-        />
-        <Tab
-          href={`/g/${secret}/settings`}
-          label="Settings"
-          on={section === "settings"}
         />
       </nav>
     </div>

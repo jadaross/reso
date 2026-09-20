@@ -40,6 +40,8 @@ export type MonthView = {
   silentCount: number;
   /** The same Members, by name. */
   silentNames: string[];
+  /** Members who have tapped at least one evening, by name. */
+  answeredNames: string[];
   /** The best three days as things stand. */
   leaders: DayTally[];
 };
@@ -121,6 +123,9 @@ export async function loadMonthView(
     silentNames: roster
       .filter((person) => !answered.has(person.id))
       .map((person) => person.name),
+    answeredNames: roster
+      .filter((person) => answered.has(person.id))
+      .map((person) => person.name),
     leaders: topDays,
   };
 }
@@ -147,6 +152,7 @@ export async function openOuting() {
 }
 
 export type Reveal = {
+  kind: "restaurant" | "party";
   place: string | null;
   area: string | null;
   address: string | null;
@@ -207,6 +213,7 @@ export async function loadReveal(
     : 0;
 
   return {
+    kind: outing.kind,
     place,
     area: null,
     address: drawn[0]?.address ?? null,
@@ -236,6 +243,7 @@ export type VisitRow = {
   outingId: string;
   month: string;
   chosenDate: DayString | null;
+  kind: "restaurant" | "party";
   place: string | null;
   address: string | null;
   tier: "low" | "medium" | "high";
