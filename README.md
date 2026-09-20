@@ -123,7 +123,7 @@ app/
 lib/
   db/               Drizzle schema and lazy client
   identity/         Group Link, per-Device identity, Admin PIN
-  cycle/            tier rotation, Chosen Date, the Draw, Close Day
+  cycle/            tier rotation, Chosen Date, the Draw, Close Day, the year ahead
   maps/             parsing pasted Apple and Google Maps links
   push/             sending Web Push
 proxy.ts            slides the identity cookie forward on every request

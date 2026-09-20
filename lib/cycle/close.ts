@@ -10,6 +10,7 @@ import {
   picks,
 } from "@/lib/db/schema";
 
+import { seedFromAdvance } from "./advance";
 import { computeChosenDate } from "./chosen-date";
 import {
   addMonths,
@@ -45,10 +46,17 @@ export async function ensureOpenOuting(
   // The Group's very first Outing starts the rotation at Low.
   const firstMonth = firstOuting?.month ?? month;
 
-  await db
+  const created = await db
     .insert(outings)
     .values({ month, tier: tierForMonth(month, firstMonth), status: "open" })
-    .onConflictDoNothing({ target: outings.month });
+    .onConflictDoNothing({ target: outings.month })
+    .returning({ id: outings.id });
+
+  // Anyone who answered for this month from the year screen is filled in from the
+  // first moment it is open, so they are never nudged for dates they already gave.
+  if (created.length > 0) {
+    await seedFromAdvance(created[0].id, month);
+  }
 
   return month;
 }

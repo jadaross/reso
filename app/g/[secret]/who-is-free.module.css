@@ -1,0 +1,79 @@
+.who {
+  border-top: 1px solid var(--hairline);
+  margin-top: 20px;
+  padding-top: 16px;
+}
+
+.heading {
+  font-family: var(--font-bricolage), sans-serif;
+  font-size: var(--step-1);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin: 0 0 8px;
+}
+
+.list {
+  margin: 0;
+  padding: 0;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 7.5em 1fr;
+  gap: 12px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--hairline);
+  align-items: baseline;
+}
+
+.row:last-child {
+  border-bottom: none;
+}
+
+.day {
+  color: var(--muted);
+  font-size: var(--step--1);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.count {
+  color: var(--muted);
+  font-size: var(--step--1);
+  opacity: 0.7;
+}
+
+/* An evening in the running for Chosen Date reads in amber, as it does on the ticket. */
+.lead .day {
+  color: var(--amber);
+}
+
+.lead .count {
+  color: var(--amber);
+  opacity: 1;
+}
+
+.names {
+  margin: 0;
+  color: var(--bone);
+  line-height: 1.45;
+}
+
+.silent {
+  color: var(--muted);
+  font-size: var(--step--1);
+  margin: 12px 0 0;
+  line-height: 1.55;
+}
+
+.silentLabel {
+  display: block;
+  color: var(--muted);
+  opacity: 0.8;
+  font-size: var(--step--1);
+  margin-bottom: 2px;
+}

@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
+import { daysOnWeekday, daysWithin, monthsAhead } from "./year";
 import { announcementText } from "./announcement";
 import { computeChosenDate } from "./chosen-date";
 import {
@@ -302,5 +303,40 @@ describe("message wording", () => {
       const copy = copyFor(kind, { ...facts, place: null });
       assert.doesNotMatch(`${copy.title} ${copy.body}`, /null|undefined/);
     }
+  });
+});
+
+describe("the year ahead", () => {
+  it("starts next month and runs for a year", () => {
+    const months = monthsAhead("2026-09-20");
+    assert.equal(months.length, 12);
+    assert.equal(months[0], "2026-10-01");
+    assert.equal(months[11], "2027-09-01");
+  });
+
+  it("finds every Friday in a month", () => {
+    assert.deepEqual(daysOnWeekday("2026-10-01", 5), [
+      "2026-10-02",
+      "2026-10-09",
+      "2026-10-16",
+      "2026-10-23",
+      "2026-10-30",
+    ]);
+    // Sunday is 0, and November 2026 starts on one.
+    assert.equal(daysOnWeekday("2026-11-01", 0)[0], "2026-11-01");
+  });
+
+  it("keeps only days that belong to the month, once each, in order", () => {
+    assert.deepEqual(
+      daysWithin("2026-11-01", [
+        "2026-11-20",
+        "2026-11-03",
+        "2026-11-20",
+        "2026-12-01",
+        "2026-11-31",
+        "not a day",
+      ]),
+      ["2026-11-03", "2026-11-20"],
+    );
   });
 });

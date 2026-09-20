@@ -1,5 +1,7 @@
 import { asc, isNull } from "drizzle-orm";
 
+import Link from "next/link";
+
 import { FinishSetup } from "@/components/finish-setup";
 import { monthName } from "@/lib/cycle/announcement";
 import {
@@ -20,6 +22,7 @@ import { Rate } from "./rate";
 import { Reveal } from "./reveal";
 import styles from "./page.module.css";
 import { BareShell, Shell } from "./shell";
+import { WhoIsFree } from "./who-is-free";
 
 const TIER_LABEL = { low: "Low", medium: "Medium", high: "High" } as const;
 
@@ -101,6 +104,18 @@ export default async function GroupHome({
       />
 
       <p className={styles.standing}>{standing(view)}</p>
+
+      <WhoIsFree
+        whoByDay={view.whoByDay}
+        leaders={view.leaders.map((tally) => tally.day)}
+        silent={view.silentNames}
+      />
+
+      <p className={styles.aside}>
+        Know your dates further out?{" "}
+        <Link href={`/g/${secret}/settings`}>Fill in the year</Link> and they will
+        be in before each month opens.
+      </p>
       <FinishSetup secret={secret} />
     </Shell>
   );

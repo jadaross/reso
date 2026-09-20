@@ -5,7 +5,7 @@ import type { Member } from "@/lib/db/schema";
 import { switchNameForm } from "./actions";
 import styles from "./shell.module.css";
 
-export type Section = "month" | "restaurants" | "history";
+export type Section = "month" | "restaurants" | "history" | "settings";
 
 /**
  * The frame every signed-in screen sits inside.
@@ -68,6 +68,11 @@ export function Shell({
           href={`/g/${secret}/history`}
           label="History"
           on={section === "history"}
+        />
+        <Tab
+          href={`/g/${secret}/settings`}
+          label="Settings"
+          on={section === "settings"}
         />
       </nav>
     </div>

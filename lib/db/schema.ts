@@ -192,6 +192,30 @@ export const availability = pgTable(
   ],
 );
 
+/**
+ * Advance Availability: days a Member has marked free for months whose Outing
+ * has not opened yet. Keyed by day alone, with no Outing to hang off, because the
+ * Outing does not exist until the 1st of the month before.
+ *
+ * When an Outing opens, its month's rows are copied into `availability` and
+ * removed from here, so a month is only ever answered in one place. Rows for a
+ * month whose Outing is already open are never written; the year screen writes
+ * straight to `availability` for that month instead.
+ */
+export const advanceAvailability = pgTable(
+  "advance_availability",
+  {
+    memberId: uuid("member_id")
+      .notNull()
+      .references(() => members.id, { onDelete: "cascade" }),
+    day: date("day").notNull(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.memberId, t.day] }),
+    index("advance_availability_day_idx").on(t.day),
+  ],
+);
+
 /** Presence of a row means that Member is bringing one guest to that Outing. */
 export const plusOnes = pgTable(
   "plus_ones",
@@ -287,6 +311,7 @@ export const sentMessages = pgTable(
 export const membersRelations = relations(members, ({ many }) => ({
   picks: many(picks),
   availability: many(availability),
+  advanceAvailability: many(advanceAvailability),
   pushSubscriptions: many(pushSubscriptions),
   ratings: many(ratings),
 }));
@@ -317,6 +342,16 @@ export const availabilityRelations = relations(availability, ({ one }) => ({
     references: [members.id],
   }),
 }));
+
+export const advanceAvailabilityRelations = relations(
+  advanceAvailability,
+  ({ one }) => ({
+    member: one(members, {
+      fields: [advanceAvailability.memberId],
+      references: [members.id],
+    }),
+  }),
+);
 
 export const ratingsRelations = relations(ratings, ({ one }) => ({
   outing: one(outings, { fields: [ratings.outingId], references: [outings.id] }),

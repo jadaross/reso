@@ -57,6 +57,10 @@ The fixed order Low, Medium, High that assigns each Outing its Price Tier, start
 The days of an Outing's month a Member has tapped as free. Whole days, dinner implied. A Member with no Availability recorded counts as unavailable all month.
 _Avoid_: RSVP, free dates, calendar
 
+**Advance Availability**:
+Days a Member has marked free for months whose Outing has not opened yet, filled in from the year screen under Settings. When an Outing opens, its month's Advance Availability becomes that Outing's Availability and is cleared from the advance list, so a month is only ever answered in one place.
+_Avoid_: Pre-fill, recurring availability, template
+
 **Close Day**:
 The 22nd of the month before the Outing. Availability locks, the Chosen Date is computed, and the Draw runs.
 

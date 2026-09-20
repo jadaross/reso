@@ -83,3 +83,17 @@
   color: var(--muted);
   max-width: var(--measure);
 }
+
+.aside {
+  color: var(--muted);
+  font-size: var(--step--1);
+  margin: 18px 0 0;
+  max-width: var(--measure);
+}
+
+.aside a {
+  color: var(--bone);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--hairline-strong);
+}

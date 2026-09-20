@@ -7,6 +7,7 @@ import { closeDueOutings } from "@/lib/cycle/close";
 import { drawFrom } from "@/lib/cycle/draw";
 import { getDb } from "@/lib/db";
 import {
+  advanceAvailability,
   attendance,
   availability,
   draws,
@@ -106,6 +107,11 @@ export async function archiveMember(
       ),
     );
   }
+
+  // Nor should their advance answers fill in months they will not be around for.
+  await db
+    .delete(advanceAvailability)
+    .where(eq(advanceAvailability.memberId, memberId));
 
   await db
     .update(members)

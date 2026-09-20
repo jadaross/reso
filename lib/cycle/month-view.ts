@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq, inArray, isNull } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull } from "drizzle-orm";
 
 import { getDb } from "@/lib/db";
 import {
@@ -30,12 +30,16 @@ export type MonthView = {
   cells: (DayString | null)[];
   /** How many Members are free on each day. */
   freeByDay: Map<DayString, number>;
+  /** Who is free on each day, by name, so people can see who they'd be eating with. */
+  whoByDay: Map<DayString, string[]>;
   /** The days this Member has tapped. */
   mine: Set<DayString>;
   myPlusOne: boolean;
   memberCount: number;
   /** Members who have tapped nothing at all. */
   silentCount: number;
+  /** The same Members, by name. */
+  silentNames: string[];
   /** The best three days as things stand. */
   leaders: DayTally[];
 };
@@ -54,11 +58,18 @@ export async function loadMonthView(
   const db = getDb();
   const month = outing.month;
 
-  const [rows, mineRows, plusOne, [memberTally]] = await Promise.all([
+  const [rows, mineRows, plusOne, roster] = await Promise.all([
+    // Joined to Members so the day can say who, and so an archived Member's
+    // leftover taps count for nothing — the same rule Close Day applies.
     db
-      .select({ memberId: availability.memberId, day: availability.day })
+      .select({
+        memberId: availability.memberId,
+        day: availability.day,
+        name: members.name,
+      })
       .from(availability)
-      .where(eq(availability.outingId, outing.id)),
+      .innerJoin(members, eq(members.id, availability.memberId))
+      .where(and(eq(availability.outingId, outing.id), isNull(members.archivedAt))),
     db
       .select({ day: availability.day })
       .from(availability)
@@ -76,17 +87,21 @@ export async function loadMonthView(
       )
       .limit(1),
     db
-      .select({ total: count() })
+      .select({ id: members.id, name: members.name })
       .from(members)
-      .where(isNull(members.archivedAt)),
+      .where(isNull(members.archivedAt))
+      .orderBy(asc(members.name)),
   ]);
 
   const freeByDay = new Map<DayString, number>();
+  const whoByDay = new Map<DayString, string[]>();
   const answered = new Set<string>();
   for (const row of rows) {
     freeByDay.set(row.day, (freeByDay.get(row.day) ?? 0) + 1);
+    whoByDay.set(row.day, [...(whoByDay.get(row.day) ?? []), row.name]);
     answered.add(row.memberId);
   }
+  for (const names of whoByDay.values()) names.sort(byName);
 
   const { topDays } = computeChosenDate(daysInMonth(month), rows);
 
@@ -98,12 +113,20 @@ export async function loadMonthView(
     closeDay: closeDayFor(month),
     cells: calendarGrid(month),
     freeByDay,
+    whoByDay,
     mine: new Set(mineRows.map((row) => row.day)),
     myPlusOne: plusOne.length > 0,
-    memberCount: memberTally?.total ?? 0,
-    silentCount: Math.max((memberTally?.total ?? 0) - answered.size, 0),
+    memberCount: roster.length,
+    silentCount: Math.max(roster.length - answered.size, 0),
+    silentNames: roster
+      .filter((person) => !answered.has(person.id))
+      .map((person) => person.name),
     leaders: topDays,
   };
+}
+
+function byName(a: string, b: string): number {
+  return a.localeCompare(b, "en-GB");
 }
 
 /**
