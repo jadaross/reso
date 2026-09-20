@@ -60,7 +60,7 @@ export default async function AdminPage({
     topDays = computeChosenDate(daysInMonth(outing.month), tapped).topDays.map(
       (tally) => ({ ...tally, label: shortDate(tally.day) }),
     );
-    emptyTier = inTier.length === 0;
+    emptyTier = outing.kind !== "party" && inTier.length === 0;
     rerolled = drawRows.some((row) => row.isReroll);
   }
 
@@ -80,6 +80,7 @@ export default async function AdminPage({
                 id: outing.id,
                 month: outing.month,
                 tier: outing.tier,
+                kind: outing.kind,
                 status: outing.status,
                 chosenDate: outing.chosenDate,
                 rerolled,

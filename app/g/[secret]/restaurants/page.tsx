@@ -46,7 +46,8 @@ export default async function Restaurants({
     openOuting(),
   ]);
 
-  const tier = outing?.tier;
+  const party = outing?.kind === "party";
+  const tier = party ? undefined : outing?.tier;
 
   // What everyone can see: how big the list is and how it splits by tier. Not which
   // restaurants are on it — the pool is deliberately hidden so the Draw stays a
@@ -83,7 +84,9 @@ export default async function Restaurants({
         <span className={rows.countsLine}>
           {tier
             ? `${byTier[tier]} of them are in this month's draw.`
-            : "No month is open, so nothing is in a draw yet."}
+            : party
+              ? "This month is a dinner party, so there is no draw."
+              : "No month is open, so nothing is in a draw yet."}
         </span>
         <div className={rows.tally}>
           {(["low", "medium", "high"] as const).map((each) => (
@@ -121,7 +124,9 @@ export default async function Restaurants({
           </div>
           {inDraw.length === 0 ? (
             <p className={rows.empty}>
-              Nothing in this month&rsquo;s tier, so there is nothing to draw from.
+              {party
+                ? "A dinner party month: nothing is drawn."
+                : "Nothing in this month\u2019s tier, so there is nothing to draw from."}
             </p>
           ) : (
             inDraw.map((entry) => (

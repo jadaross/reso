@@ -23,6 +23,7 @@ import {
 } from "./dates";
 import { drawFrom } from "./draw";
 import { tierForMonth } from "./tier";
+import { decideMonth, votesFor } from "./vote";
 
 /**
  * Create the Outing that opens today, if it does not exist yet.
@@ -46,9 +47,22 @@ export async function ensureOpenOuting(
   // The Group's very first Outing starts the rotation at Low.
   const firstMonth = firstOuting?.month ?? month;
 
+  // The vote on this month is counted here, once, as its Outing is born. The
+  // rota is what it falls back to when nobody said anything.
+  const decision = decideMonth(
+    await votesFor(month),
+    tierForMonth(month, firstMonth),
+  );
+
   const created = await db
     .insert(outings)
-    .values({ month, tier: tierForMonth(month, firstMonth), status: "open" })
+    .values({
+      month,
+      tier: decision.tier,
+      kind: decision.kind,
+      tierOverridden: decision.how !== "rota",
+      status: "open",
+    })
     .onConflictDoNothing({ target: outings.month })
     .returning({ id: outings.id });
 
@@ -84,7 +98,12 @@ export async function closeDueOutings(
   const db = getDb();
 
   const open = await db
-    .select({ id: outings.id, month: outings.month, tier: outings.tier })
+    .select({
+      id: outings.id,
+      month: outings.month,
+      tier: outings.tier,
+      kind: outings.kind,
+    })
     .from(outings)
     .where(eq(outings.status, "open"));
 
@@ -102,11 +121,16 @@ export async function closeDueOutings(
 
     const chosen = computeChosenDate(daysInMonth(outing.month), tapped);
 
-    const candidates = await db
-      .select({ id: picks.id })
-      .from(picks)
-      .innerJoin(members, eq(members.id, picks.memberId))
-      .where(eq(picks.tier, outing.tier));
+    // A dinner party has no Draw: nobody's Pick is a ticket, and the empty-tier
+    // warning below is not a warning at all.
+    const candidates =
+      outing.kind === "party"
+        ? []
+        : await db
+            .select({ id: picks.id })
+            .from(picks)
+            .innerJoin(members, eq(members.id, picks.memberId))
+            .where(eq(picks.tier, outing.tier));
 
     const drawn = drawFrom(candidates);
 
@@ -162,7 +186,7 @@ export async function closeDueOutings(
       // is still fog on the wayfinder map. Closing with no Drawn Pick and
       // surfacing it is the smallest honest behaviour until that is settled — it
       // does not silently fall through to another tier.
-      emptyTier: candidates.length === 0,
+      emptyTier: outing.kind !== "party" && candidates.length === 0,
     });
   }
 

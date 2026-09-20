@@ -40,7 +40,10 @@ export default async function History({
         <article key={visit.outingId} className={rows.visit}>
           <div className={rows.head}>
             <div>
-              <h2 className={rows.place}>{visit.place ?? "No restaurant drawn"}</h2>
+              <h2 className={rows.place}>
+                {visit.place ??
+                  (visit.kind === "party" ? "Dinner party" : "No restaurant drawn")}
+              </h2>
               <p className={rows.when}>
                 {visit.chosenDate
                   ? readableDate(visit.chosenDate)

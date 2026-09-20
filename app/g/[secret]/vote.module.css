@@ -1,0 +1,106 @@
+.vote {
+  border-top: 1px solid var(--hairline);
+  margin-top: 22px;
+  padding-top: 16px;
+}
+
+.heading {
+  font-family: var(--font-bricolage), sans-serif;
+  font-size: var(--step-1);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin: 0 0 6px;
+  text-wrap: balance;
+}
+
+.small {
+  color: var(--muted);
+  font-size: var(--step--1);
+  line-height: 1.55;
+  margin: 0 0 12px;
+  max-width: var(--measure);
+}
+
+.choices {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.choice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  background: transparent;
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--radius);
+  color: var(--bone);
+  padding: 12px 14px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.choice:disabled {
+  cursor: default;
+}
+
+.on {
+  border-color: var(--amber);
+  color: var(--amber);
+}
+
+.label {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.mark {
+  color: var(--amber);
+  letter-spacing: 0.06em;
+  font-size: var(--step--1);
+}
+
+.count {
+  color: var(--muted);
+  font-size: var(--step--1);
+  font-variant-numeric: tabular-nums;
+}
+
+.on .count {
+  color: var(--amber);
+}
+
+.tally {
+  margin: 12px 0 0;
+  padding: 0;
+}
+
+.tallyRow {
+  display: grid;
+  grid-template-columns: 6.5em 1fr;
+  gap: 10px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--hairline);
+  font-size: var(--step--1);
+}
+
+.tallyRow:last-child {
+  border-bottom: none;
+}
+
+.tallyRow dt {
+  color: var(--muted);
+}
+
+.tallyRow dd {
+  margin: 0;
+  color: var(--bone);
+}
+
+.error {
+  color: var(--amber);
+  font-size: var(--step--1);
+  margin: 10px 0 0;
+}

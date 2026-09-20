@@ -15,6 +15,13 @@
       "when": 1789933631083,
       "tag": "0001_advance_availability",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1789934263649,
+      "tag": "0002_month_votes",
+      "breakpoints": true
     }
   ]
 }

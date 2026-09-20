@@ -29,6 +29,7 @@ export function Reveal({
 }) {
   const text = announcementText({
     month: data.month,
+    kind: data.kind,
     chosenDate: data.chosenDate,
     place: data.place,
     area: data.area,
@@ -37,6 +38,10 @@ export function Reveal({
     plusOnes: data.plusOnes,
     tickets: data.tickets,
   });
+
+  if (data.kind === "party") {
+    return <PartyTicket data={data} outingId={outingId} isAdmin={isAdmin} text={text} />;
+  }
 
   if (!data.place) {
     return (
@@ -101,6 +106,82 @@ export function Reveal({
       {data.going.length > 0 ? (
         <p className={styles.why}>
           Going: {data.going.join(", ")}
+          {data.plusOnes > 0
+            ? `, plus ${data.plusOnes} ${data.plusOnes === 1 ? "guest" : "guests"}`
+            : ""}
+          .
+        </p>
+      ) : null}
+
+      {isAdmin ? <p className={styles.draft}>{text}</p> : null}
+    </>
+  );
+}
+
+/**
+ * A dinner party has no place to draw and no table to book. It has a date, a
+ * headcount, and a host still to be found — which, like booking, is a human job.
+ */
+function PartyTicket({
+  data,
+  outingId,
+  isAdmin,
+  text,
+}: {
+  data: RevealData;
+  outingId: string;
+  isAdmin: boolean;
+  text: string;
+}) {
+  if (!data.chosenDate) {
+    return (
+      <>
+        <div className={styles.empty}>
+          <strong>Nobody put any dates in.</strong>
+          Without any dates there is no dinner party to host.
+        </div>
+        <p className={styles.draft}>{text}</p>
+      </>
+    );
+  }
+
+  const heads = data.going.length + data.plusOnes;
+
+  return (
+    <>
+      <div className={styles.ticket}>
+        <div className={styles.stamp}>DINNER PARTY</div>
+        <div className={styles.month}>{monthName(data.month)}</div>
+        <p className={styles.place}>At someone&rsquo;s</p>
+        <p className={styles.address}>You voted for a night in this month.</p>
+
+        <div className={styles.tear} />
+
+        <div className={styles.facts}>
+          <div>
+            <span>Date</span>
+            <strong>{shortDate(data.chosenDate)}</strong>
+          </div>
+          <div>
+            <span>Coming</span>
+            <strong>{heads}</strong>
+          </div>
+          <div>
+            <span>Host</span>
+            <strong>Not yet</strong>
+          </div>
+        </div>
+      </div>
+
+      <ShareButton text={text} outingId={outingId} />
+
+      <p className={styles.why}>
+        No draw this month. Someone still needs to offer their kitchen.
+      </p>
+
+      {data.going.length > 0 ? (
+        <p className={styles.why}>
+          Coming: {data.going.join(", ")}
           {data.plusOnes > 0
             ? `, plus ${data.plusOnes} ${data.plusOnes === 1 ? "guest" : "guests"}`
             : ""}

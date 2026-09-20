@@ -51,7 +51,15 @@ The Group's dinner for one calendar month. It carries a Price Tier, a Chosen Dat
 _Avoid_: Event, dinner, booking, session
 
 **Tier Rotation**:
-The fixed order Low, Medium, High that assigns each Outing its Price Tier, starting at Low. An Admin can override a single Outing.
+The fixed order Low, Medium, High that assigns each Outing its Price Tier, starting at Low. Since the Month Vote it is the fallback: it stands when nobody votes and breaks a tie it is part of. An Admin can override a single Outing.
+
+**Month Vote**:
+Each Member's one vote on what kind of month the one after next should be: Low, Medium, High, or a Dinner Party. Counted on the 1st of the month before, the moment that month's Outing is created. A clear winner takes it; otherwise the Tier Rotation decides a tie it is in, and any other tie is drawn.
+_Avoid_: Poll, survey
+
+**Dinner Party**:
+A kind of Outing with no Draw: the Group eats at someone's home. It still has a Chosen Date and attendance, and needs a host rather than a booking. Finding the host is a human task, like booking a table.
+_Avoid_: Potluck, house night
 
 **Availability**:
 The days of an Outing's month a Member has tapped as free. Whole days, dinner implied. A Member with no Availability recorded counts as unavailable all month.

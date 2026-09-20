@@ -67,6 +67,7 @@ export function copyFor(
   facts: {
     month: string;
     place: string | null;
+    party: boolean;
     answered: number;
     total: number;
     announcement: string;
@@ -107,12 +108,12 @@ export function copyFor(
       };
     case "day-before":
       return {
-        title: `${facts.place ?? "Dinner"} tomorrow`,
+        title: facts.party ? "Dinner party tomorrow" : `${facts.place ?? "Dinner"} tomorrow`,
         body: facts.announcement,
       };
     case "rate":
       return {
-        title: `How was ${facts.place ?? "it"}?`,
+        title: facts.party ? "How was the dinner party?" : `How was ${facts.place ?? "it"}?`,
         body: "Give it a score while you still remember.",
       };
   }
@@ -255,12 +256,14 @@ export async function sendDueMessages(
     const facts = {
       month: outing.month,
       place: drawn[0]?.name ?? null,
+      party: outing.kind === "party",
       answered: tapped.length,
       total: total[0]?.n ?? 0,
       inTier: inTier.length,
       tierLabel: TIER_WORD[outing.tier],
       announcement: announcementText({
         month: outing.month,
+        kind: outing.kind,
         chosenDate: outing.chosenDate,
         place: drawn[0]?.name ?? null,
         area: null,
@@ -281,7 +284,8 @@ export async function sendDueMessages(
       // active months went silent — the point is to keep people opening the app, not
       // only to rescue an empty list. Anchoring it here keeps it early even though
       // Close Day has since moved a week later.
-      if (today >= stockUpDayFor(outing.month)) {
+      // Not for a dinner party: there is no list to stock.
+      if (outing.kind !== "party" && today >= stockUpDayFor(outing.month)) {
         due.push("stock-up");
       }
 

@@ -4,6 +4,8 @@ import type { DayString } from "./dates";
 
 export type AnnouncementFacts = {
   month: string;
+  /** A dinner party has no place to name and needs a host, not a booking. */
+  kind?: "restaurant" | "party";
   chosenDate: DayString | null;
   place: string | null;
   area: string | null;
@@ -25,6 +27,10 @@ export function announcementText(facts: AnnouncementFacts): string {
 
   if (!facts.chosenDate) {
     return `${month}: nobody put any dates in, so there's nothing booked.`;
+  }
+  if (facts.kind === "party") {
+    const heads = facts.going + facts.plusOnes;
+    return `${month}: dinner party — ${readableDate(facts.chosenDate)}. ${heads} of us. Someone needs to host.`;
   }
   if (!facts.place) {
     return `${month}: ${readableDate(facts.chosenDate)} works for most of us, but there was nothing in the ${facts.tier} list to draw from.`;

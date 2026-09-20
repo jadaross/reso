@@ -24,6 +24,7 @@ export type MonthView = {
   outingId: string;
   month: string;
   tier: "low" | "medium" | "high";
+  kind: "restaurant" | "party";
   status: "open" | "announced" | "done";
   closeDay: DayString;
   /** Calendar cells, Monday first, nulls for padding. */
@@ -111,6 +112,7 @@ export async function loadMonthView(
     outingId: outing.id,
     month,
     tier: outing.tier,
+    kind: outing.kind,
     status: outing.status,
     closeDay: closeDayFor(month),
     cells: calendarGrid(month),
@@ -303,6 +305,7 @@ export async function loadVisits(): Promise<VisitRow[]> {
       outingId: outing.id,
       month: outing.month,
       chosenDate: outing.chosenDate,
+      kind: outing.kind,
       place: pick?.name ?? null,
       address: pick?.address ?? null,
       tier: outing.tier,

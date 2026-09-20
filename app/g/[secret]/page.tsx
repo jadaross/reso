@@ -12,6 +12,8 @@ import {
   myRating,
   openOuting,
 } from "@/lib/cycle/month-view";
+import { todayInLondon } from "@/lib/cycle/dates";
+import { isSettled, loadVote, rotaFor, voteMonthFor } from "@/lib/cycle/vote";
 import { getDb } from "@/lib/db";
 import { members, type Member } from "@/lib/db/schema";
 import { currentAdmin, currentMember } from "@/lib/identity/guard";
@@ -22,6 +24,7 @@ import { Rate } from "./rate";
 import { Reveal } from "./reveal";
 import styles from "./page.module.css";
 import { BareShell, Shell } from "./shell";
+import { Vote } from "./vote";
 import { InTheRunning } from "./in-the-running";
 
 const TIER_LABEL = { low: "Low", medium: "Medium", high: "High" } as const;
@@ -37,6 +40,7 @@ export default async function GroupHome({
   if (!member) return <PickYourName secret={secret} />;
 
   const outing = await openOuting();
+  const vote = await loadVoteBlock(member.id);
 
   // Nothing taking Availability: show the month that has already been settled,
   // which is what people open the app for between the 15th and the dinner.
@@ -48,9 +52,11 @@ export default async function GroupHome({
     const admin = await currentAdmin();
 
     // The morning after: whoever went is asked how it was, once.
+    const rateLabel =
+      reveal.kind === "party" ? "the dinner party" : reveal.place;
     const askForRating =
       settled.status === "done" &&
-      reveal.place !== null &&
+      rateLabel !== null &&
       (await didAttend(settled.id, member.id));
     const existing = askForRating
       ? await myRating(settled.id, member.id)
@@ -61,19 +67,24 @@ export default async function GroupHome({
         secret={secret}
         member={member}
         section="month"
-        eyebrow={`${TIER_LABEL[settled.tier]} month`}
+        eyebrow={
+          settled.kind === "party"
+            ? "Dinner party"
+            : `${TIER_LABEL[settled.tier]} month`
+        }
       >
         {/* No heading: the ticket carries the month, and printing it twice above
             its own stamp is the sort of thing that makes a screen feel generated. */}
         <Reveal data={reveal} outingId={settled.id} isAdmin={Boolean(admin)} />
-        {askForRating && reveal.place ? (
+        {askForRating && rateLabel ? (
           <Rate
             secret={secret}
             outingId={settled.id}
-            place={reveal.place}
+            place={rateLabel}
             existing={existing}
           />
         ) : null}
+        {vote ? <Vote secret={secret} view={vote} me={member.name} /> : null}
         <FinishSetup secret={secret} />
       </Shell>
     );
@@ -86,7 +97,9 @@ export default async function GroupHome({
       secret={secret}
       member={member}
       section="month"
-      eyebrow={`${TIER_LABEL[view.tier]} month`}
+      eyebrow={
+        view.kind === "party" ? "Dinner party" : `${TIER_LABEL[view.tier]} month`
+      }
     >
       <h1 className={styles.title}>{monthName(view.month)}</h1>
       <p className={styles.lede}>
@@ -118,9 +131,24 @@ export default async function GroupHome({
         <Link href={`/g/${secret}/settings`}>Fill in the year</Link> and they will
         be in before each month opens.
       </p>
+
+      {vote ? <Vote secret={secret} view={vote} me={member.name} /> : null}
       <FinishSetup secret={secret} />
     </Shell>
   );
+}
+
+/**
+ * The vote on the month after next, or null once that month has an Outing.
+ *
+ * Shown in both states of this screen: while a month is open and after it has
+ * closed, because the vote runs until the 1st regardless of where the dinner
+ * cycle is.
+ */
+async function loadVoteBlock(memberId: string) {
+  const month = voteMonthFor(todayInLondon());
+  if (await isSettled(month)) return null;
+  return loadVote(month, memberId, await rotaFor(month));
 }
 
 /** The line under the calendar: where the month has got to, in words. */

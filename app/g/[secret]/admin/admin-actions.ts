@@ -15,7 +15,7 @@ import {
   outings,
   picks,
   pushSubscriptions,
-  type PriceTier,
+  type MonthChoice,
 } from "@/lib/db/schema";
 import { sendToSubscriptions } from "@/lib/push/send";
 import { requireAdmin } from "@/lib/identity/guard";
@@ -122,21 +122,32 @@ export async function archiveMember(
   return { ok: true, note: "Archived. Their picks and past dinners are kept." };
 }
 
-/** Override this month's Price Tier — a birthday can be expensive out of turn. */
+/**
+ * Override what kind of month this is — a birthday can be expensive out of turn,
+ * and a dinner party can be called without a vote. Switching back to a tier
+ * makes it a restaurant month again.
+ */
 export async function overrideTier(
   secret: string,
   outingId: string,
-  tier: PriceTier,
+  choice: MonthChoice,
 ): Promise<AdminResult> {
   await requireAdmin();
 
   await getDb()
     .update(outings)
-    .set({ tier, tierOverridden: true })
+    .set(
+      choice === "party"
+        ? { kind: "party", tierOverridden: true }
+        : { kind: "restaurant", tier: choice, tierOverridden: true },
+    )
     .where(eq(outings.id, outingId));
 
   refresh(secret);
-  return { ok: true, note: `This month is now ${tier}.` };
+  return {
+    ok: true,
+    note: choice === "party" ? "This month is now a dinner party." : `This month is now ${choice}.`,
+  };
 }
 
 /** Pick a different day from the top few, when the arithmetic misses something. */

@@ -30,6 +30,15 @@ export const outingStatus = pgEnum("outing_status", [
   "done",
 ]);
 
+/**
+ * restaurant — the usual: a Draw from the Picks in the month's tier.
+ * party      — a dinner party at someone's home. No Draw; a host, not a table.
+ */
+export const outingKind = pgEnum("outing_kind", ["restaurant", "party"]);
+
+/** What a Member wants next month to be: one of the three tiers, or a dinner party. */
+export const monthChoice = pgEnum("month_choice", ["low", "medium", "high", "party"]);
+
 /** Which service a Pick's raw link came from. */
 export const linkSource = pgEnum("link_source", ["apple", "google", "unknown"]);
 
@@ -157,6 +166,8 @@ export const outings = pgTable("outings", {
   month: date("month").notNull().unique(),
   tier: priceTier("tier").notNull(),
   tierOverridden: boolean("tier_overridden").notNull().default(false),
+  /** A dinner party month keeps its rota tier underneath, but runs no Draw. */
+  kind: outingKind("kind").notNull().default("restaurant"),
   status: outingStatus("status").notNull().default("open"),
   chosenDate: date("chosen_date"),
   chosenDateOverridden: boolean("chosen_date_overridden")
@@ -190,6 +201,27 @@ export const availability = pgTable(
     primaryKey({ columns: [t.outingId, t.memberId, t.day] }),
     index("availability_outing_day_idx").on(t.outingId, t.day),
   ],
+);
+
+/**
+ * The vote on what kind of month the one after next should be. One row per
+ * Member per month, keyed by the month being voted on rather than by an Outing,
+ * because the Outing does not exist until the vote has been counted — the count
+ * happens on the 1st of the month before, at the moment the Outing is created.
+ */
+export const monthVotes = pgTable(
+  "month_votes",
+  {
+    month: date("month").notNull(),
+    memberId: uuid("member_id")
+      .notNull()
+      .references(() => members.id, { onDelete: "cascade" }),
+    choice: monthChoice("choice").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.month, t.memberId] })],
 );
 
 /**
@@ -363,3 +395,5 @@ export type Pick = typeof picks.$inferSelect;
 export type Outing = typeof outings.$inferSelect;
 export type PriceTier = (typeof priceTier.enumValues)[number];
 export type OutingStatus = (typeof outingStatus.enumValues)[number];
+export type OutingKind = (typeof outingKind.enumValues)[number];
+export type MonthChoice = (typeof monthChoice.enumValues)[number];

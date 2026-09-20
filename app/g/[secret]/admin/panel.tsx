@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 
-import type { PriceTier } from "@/lib/db/schema";
+import type { MonthChoice, PriceTier } from "@/lib/db/schema";
 
 import {
   addMember,
@@ -29,6 +29,7 @@ export type PanelProps = {
     id: string;
     month: string;
     tier: PriceTier;
+    kind: "restaurant" | "party";
     status: "open" | "announced" | "done";
     chosenDate: string | null;
     rerolled: boolean;
@@ -115,19 +116,29 @@ export function Panel({ secret, people, outing, topDays, emptyTier }: PanelProps
           <h2 className={styles.heading}>This month</h2>
 
           <div className={styles.control}>
-            <span className={styles.label}>Price tier</span>
+            <span className={styles.label}>Kind of month</span>
             <div className={styles.choices}>
-              {(["low", "medium", "high"] as const).map((tier) => (
-                <button
-                  key={tier}
-                  type="button"
-                  disabled={pending}
-                  className={tier === outing.tier ? styles.chosen : undefined}
-                  onClick={() => run(() => overrideTier(secret, outing.id, tier))}
-                >
-                  {tier === "low" ? "£" : tier === "medium" ? "££" : "£££"}
-                </button>
-              ))}
+              {(["low", "medium", "high", "party"] as const).map((choice) => {
+                const current: MonthChoice =
+                  outing.kind === "party" ? "party" : outing.tier;
+                return (
+                  <button
+                    key={choice}
+                    type="button"
+                    disabled={pending}
+                    className={choice === current ? styles.chosen : undefined}
+                    onClick={() => run(() => overrideTier(secret, outing.id, choice))}
+                  >
+                    {choice === "low"
+                      ? "£"
+                      : choice === "medium"
+                        ? "££"
+                        : choice === "high"
+                          ? "£££"
+                          : "Dinner party"}
+                  </button>
+                );
+              })}
             </div>
           </div>
 

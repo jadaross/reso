@@ -16,6 +16,7 @@ import {
   weekdayOf,
 } from "./dates";
 import { drawFrom, randomIndex } from "./draw";
+import { decideMonth, voteMonthFor } from "./month-choice";
 import { copyFor } from "./messages";
 import { tierForMonth, tierForSequence } from "./tier";
 
@@ -260,6 +261,7 @@ describe("message wording", () => {
   const facts = {
     month: "2026-10-01",
     place: "Mangal 2",
+    party: false,
     answered: 4,
     total: 6,
     announcement: "October: Mangal 2 — Friday 16 October. 6 of us. Still needs booking.",
@@ -337,6 +339,71 @@ describe("the year ahead", () => {
         "not a day",
       ]),
       ["2026-11-03", "2026-11-20"],
+    );
+  });
+});
+
+describe("the month vote", () => {
+  it("leaves the rota alone when nobody votes", () => {
+    const decision = decideMonth([], "medium");
+    assert.equal(decision.how, "rota");
+    assert.equal(decision.kind, "restaurant");
+    assert.equal(decision.tier, "medium");
+  });
+
+  it("takes a clear winner", () => {
+    const decision = decideMonth(
+      [{ choice: "high" }, { choice: "high" }, { choice: "low" }],
+      "medium",
+    );
+    assert.equal(decision.how, "vote");
+    assert.equal(decision.tier, "high");
+  });
+
+  it("makes a dinner party with the rota's tier kept underneath", () => {
+    const decision = decideMonth([{ choice: "party" }], "high");
+    assert.equal(decision.kind, "party");
+    assert.equal(decision.tier, "high");
+  });
+
+  it("breaks a tie toward the rota when the rota is in it", () => {
+    const decision = decideMonth([{ choice: "low" }, { choice: "medium" }], "medium");
+    assert.equal(decision.how, "tie-rota");
+    assert.equal(decision.tier, "medium");
+  });
+
+  it("draws a tie the rota is not part of", () => {
+    const decision = decideMonth(
+      [{ choice: "low" }, { choice: "party" }],
+      "high",
+      (candidates) => candidates[candidates.length - 1],
+    );
+    assert.equal(decision.how, "tie-draw");
+    assert.equal(decision.kind, "party");
+  });
+
+  it("votes on the month after next", () => {
+    assert.equal(voteMonthFor("2026-09-20"), "2026-11-01");
+    assert.equal(voteMonthFor("2026-12-03"), "2027-02-01");
+  });
+});
+
+describe("dinner party wording", () => {
+  it("asks for a host rather than a booking", () => {
+    const text = announcementText({
+      month: "2026-12-01",
+      kind: "party",
+      chosenDate: "2026-12-11",
+      place: null,
+      area: null,
+      tier: "low",
+      going: 5,
+      plusOnes: 1,
+      tickets: 0,
+    });
+    assert.equal(
+      text,
+      "December: dinner party — Friday 11 December. 6 of us. Someone needs to host.",
     );
   });
 });
