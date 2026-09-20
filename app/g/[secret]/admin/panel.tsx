@@ -13,6 +13,7 @@ import {
   reroll,
   rotateGroupLink,
   sendTestPush,
+  tellEveryone,
   type AdminResult,
 } from "./admin-actions";
 import styles from "./admin.module.css";
@@ -203,6 +204,32 @@ export function Panel({ secret, people, outing, topDays, emptyTier }: PanelProps
           </div>
         </section>
       ) : null}
+
+      <section className={styles.section}>
+        <h2 className={styles.heading}>Tell everyone</h2>
+        <p className={styles.hint}>
+          A one-off note to every phone with notifications on. It goes the moment
+          you tap Send, so read it back first.
+        </p>
+        <form
+          className={styles.addRow}
+          action={(formData) => {
+            const text = String(formData.get("text") ?? "");
+            run(() => tellEveryone(secret, text));
+          }}
+        >
+          <input
+            name="text"
+            className={styles.field}
+            defaultValue="Updates pushed to the app: fill in your year under Settings, see who's free on the new Free tab, and vote on what kind of month November should be."
+            maxLength={200}
+            autoComplete="off"
+          />
+          <button type="submit" disabled={pending}>
+            Send
+          </button>
+        </form>
+      </section>
 
       <section className={styles.section}>
         <h2 className={styles.heading}>Notifications</h2>

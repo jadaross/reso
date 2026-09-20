@@ -300,6 +300,61 @@ export async function rotateGroupLink(secret: string): Promise<AdminResult> {
   return { ok: true, note: `New link: /g/${next}` };
 }
 
+/**
+ * Send a note to every phone in the Group, right now.
+ *
+ * For the things the message calendar cannot know about — "there are new bits
+ * in the app", "bring cash". Once per tap, no schedule, no ledger: it goes out
+ * to everyone still in the Group who has notifications on, and that is all.
+ */
+export async function tellEveryone(
+  secret: string,
+  rawText: string,
+): Promise<AdminResult> {
+  await requireAdmin();
+
+  const text = rawText.trim().replace(/\s+/g, " ");
+  if (!text) return { ok: false, error: "Write something first." };
+  if (text.length > 200) return { ok: false, error: "Keep it under 200 characters." };
+
+  const devices = await getDb()
+    .select({
+      id: pushSubscriptions.id,
+      endpoint: pushSubscriptions.endpoint,
+      p256dh: pushSubscriptions.p256dh,
+      auth: pushSubscriptions.auth,
+    })
+    .from(pushSubscriptions)
+    .innerJoin(members, eq(members.id, pushSubscriptions.memberId))
+    .where(isNull(members.archivedAt));
+
+  if (devices.length === 0) {
+    return { ok: false, error: "Nobody has notifications on yet." };
+  }
+
+  const { sent, removed } = await sendToSubscriptions(devices, {
+    title: "Reso",
+    body: text,
+    url: `/g/${secret}`,
+    tag: "note",
+  });
+
+  if (sent === 0) {
+    return {
+      ok: false,
+      error:
+        removed > 0
+          ? "Every subscription had expired, so they have been cleared. People need to turn notifications on again."
+          : "Apple refused it. Nothing was delivered.",
+    };
+  }
+
+  return {
+    ok: true,
+    note: `Sent to ${sent} ${sent === 1 ? "phone" : "phones"}.`,
+  };
+}
+
 /** The roster, for the panel. */
 export async function roster() {
   return getDb()
