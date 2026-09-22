@@ -1,7 +1,7 @@
 # Reso — wayfinder map
 
 Status: **reached.** The destination was a v1 spec ready to build slice by slice. It exists at
-`.scratch/reso/spec.md`, with build tickets 08–17 in `issues/`. All seven decision tickets are
+`.scratch/reso/spec.md`, with build tickets 08–19 in `issues/`. All seven decision tickets are
 resolved and no fog remains. Work continues on the build tickets, not on this map.
 
 Label: wayfinder:map
