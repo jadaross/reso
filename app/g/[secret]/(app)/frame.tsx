@@ -13,10 +13,10 @@ import {
 import styles from "./shell.module.css";
 
 const TABS = [
-  { path: "", label: "Month" },
-  { path: "/free", label: "Free" },
-  { path: "/restaurants", label: "Restaurants" },
-  { path: "/history", label: "History" },
+  { path: "", label: "Dinner" },
+  { path: "/dates", label: "Dates" },
+  { path: "/restaurants", label: "Places" },
+  { path: "/history", label: "Past" },
 ] as const;
 
 const SetEyebrow = createContext<(text: string) => void>(() => {});
@@ -52,8 +52,6 @@ export function Frame({
     main.current?.scrollTo(0, 0);
   }, [pathname]);
 
-  const onSettings = pathname === `${base}/settings`;
-
   return (
     <SetEyebrow.Provider value={setEyebrow}>
       <div className={styles.shell}>
@@ -61,17 +59,9 @@ export function Frame({
           {who}
           <span className={styles.eyebrow}>
             {eyebrow}
-            {eyebrow ? " · " : ""}
-            <Link
-              href={`${base}/settings`}
-              className={styles.headerLink}
-              aria-current={onSettings ? "page" : undefined}
-            >
-              Your year
-            </Link>
             {isAdmin ? (
               <>
-                {" · "}
+                {eyebrow ? " · " : ""}
                 <Link href={`${base}/admin`} className={styles.adminLink}>
                   Admin
                 </Link>

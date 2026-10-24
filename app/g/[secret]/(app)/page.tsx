@@ -1,10 +1,10 @@
-import { asc, isNull } from "drizzle-orm";
+import { asc, count, eq, isNull } from "drizzle-orm";
 
 import Link from "next/link";
 
 import { FinishSetup } from "@/components/finish-setup";
 import { monthName, shortDate } from "@/lib/cycle/announcement";
-import { todayInLondon } from "@/lib/cycle/dates";
+import { addMonths, closeDayFor, todayInLondon } from "@/lib/cycle/dates";
 import {
   announcedOuting,
   didAttend,
@@ -16,13 +16,11 @@ import {
 } from "@/lib/cycle/month-view";
 import { isSettled, loadVote, rotaFor, voteMonthFor } from "@/lib/cycle/vote";
 import { getDb } from "@/lib/db";
-import { members } from "@/lib/db/schema";
+import { members, outings, picks } from "@/lib/db/schema";
 import { currentMember } from "@/lib/identity/guard";
 
 import { claimNameForm } from "./actions";
-import { Calendar } from "./calendar";
 import { Eyebrow } from "./frame";
-import { InTheRunning } from "./in-the-running";
 import styles from "./page.module.css";
 import { Rate } from "./rate";
 import { Reveal } from "./reveal";
@@ -31,12 +29,11 @@ import { Vote } from "./vote";
 const TIER_LABEL = { low: "Low", medium: "Medium", high: "High" } as const;
 
 /**
- * The month screen, top to bottom: the dinner that is settled and still ahead,
- * the month that is taking dates, the last dinner if it wants rating, the vote.
+ * The Dinner screen: the ticket, then one card per thing that might want you.
  *
- * The first two overlap for most of every month — the next month opens on the
- * 1st and the dinner is usually mid-month — so they are both here, in that
- * order, rather than one hiding the other.
+ * Each card is a door to a tab, and says what is waiting behind it — how many
+ * evenings you've tapped, whether the last dinner has your score — so the
+ * screen reads as a to-do list rather than a menu.
  */
 export default async function GroupHome({
   params,
@@ -48,32 +45,40 @@ export default async function GroupHome({
 
   if (!member) return <PickYourName secret={secret} />;
 
-  const [open, announced, done, vote] = await Promise.all([
+  const today = todayInLondon();
+  const [open, announced, done, vote, placeCounts, dinners] = await Promise.all([
     openOuting(),
     announcedOuting(),
     latestDoneOuting(),
     loadVoteBlock(member.id),
+    getDb()
+      .select({ memberId: picks.memberId })
+      .from(picks),
+    getDb()
+      .select({ n: count() })
+      .from(outings)
+      .where(eq(outings.status, "done")),
   ]);
 
-  const eyebrow = open
-    ? open.kind === "party"
-      ? `${monthName(open.month)}: dinner party`
-      : `${monthName(open.month)}: ${TIER_LABEL[open.tier].toLowerCase()}`
-    : announced
-      ? announced.kind === "party"
-        ? "Dinner party"
-        : `${TIER_LABEL[announced.tier]} month`
-      : "";
+  const view = open ? await loadMonthView(open, member.id) : null;
 
   // The last dinner is asked about until it has been rated, for a few weeks.
   const askAbout =
-    done && done.chosenDate && daysAgo(done.chosenDate) <= 21 && (await didAttend(done.id, member.id))
+    done && done.chosenDate && daysAgo(done.chosenDate, today) <= 21 && (await didAttend(done.id, member.id))
       ? done
       : null;
   const existing = askAbout ? await myRating(askAbout.id, member.id) : null;
-  const showRate = askAbout && (!existing || (!open && !announced));
+  const nothingSettled = !announced;
 
-  const view = open ? await loadMonthView(open, member.id) : null;
+  const eyebrow = announced
+    ? announced.kind === "party"
+      ? "Dinner party"
+      : `${TIER_LABEL[announced.tier]} month`
+    : open
+      ? `${monthName(open.month)} draws ${shortDate(closeDayFor(open.month))}`
+      : "";
+
+  const nextMonth = open?.month ?? (announced ? addMonths(announced.month, 1) : null);
 
   return (
     <>
@@ -85,45 +90,7 @@ export default async function GroupHome({
           secret={secret}
           isAdmin={member.isAdmin}
         />
-      ) : null}
-
-      {open && view ? (
-        <section className={announced ? styles.nextMonth : undefined}>
-          <h1 className={announced ? styles.subtitle : styles.title}>
-            {monthName(view.month)}
-          </h1>
-          <p className={styles.lede}>
-            Tap every evening you could make. Closes {shortDate(view.closeDay)}.
-          </p>
-
-          <Calendar
-            secret={secret}
-            cells={view.cells}
-            mine={[...view.mine]}
-            freeByDay={Object.fromEntries(view.freeByDay)}
-            memberCount={view.memberCount}
-            myPlusOne={view.myPlusOne}
-            locked={false}
-          />
-
-          <p className={styles.standing}>{standing(view)}</p>
-
-          <InTheRunning
-            leaders={view.leaders}
-            whoByDay={view.whoByDay}
-            answered={view.answeredNames}
-            silent={view.silentNames}
-            memberCount={view.memberCount}
-          />
-
-          <p className={styles.aside}>
-            Know your dates further out?{" "}
-            <Link href={`/g/${secret}/settings`}>Fill in the year</Link>.
-          </p>
-        </section>
-      ) : null}
-
-      {!open && !announced && done ? (
+      ) : nothingSettled && done && (!askAbout || existing) && !open ? (
         <Reveal
           data={await loadReveal(done, member.id)}
           secret={secret}
@@ -131,7 +98,7 @@ export default async function GroupHome({
         />
       ) : null}
 
-      {showRate && askAbout ? (
+      {askAbout && !existing ? (
         <Rate
           secret={secret}
           outingId={askAbout.id}
@@ -140,10 +107,55 @@ export default async function GroupHome({
         />
       ) : null}
 
-      {!open && !announced && !done ? <BetweenMonths /> : null}
+      <nav className={styles.doors} aria-label="What's next">
+        {view ? (
+          <Link href={`/g/${secret}/dates`} className={`${styles.door} ${view.mine.size === 0 ? styles.doorHot : ""}`}>
+            <strong>Your dates for {monthName(view.month)}</strong>
+            <span>
+              {view.mine.size === 0
+                ? "Nothing tapped yet"
+                : `${view.mine.size} ${view.mine.size === 1 ? "evening" : "evenings"} tapped`}
+              {" · "}closes {shortDate(view.closeDay)}
+            </span>
+          </Link>
+        ) : (
+          <Link href={`/g/${secret}/dates`} className={styles.door}>
+            <strong>Your dates</strong>
+            <span>
+              {nextMonth
+                ? `${monthName(nextMonth)} opens on the 1st. Fill in the year ahead.`
+                : "Fill in the year ahead."}
+            </span>
+          </Link>
+        )}
+
+        <Link href={`/g/${secret}/restaurants`} className={styles.door}>
+          <strong>Add a place</strong>
+          <span>
+            {placeCounts.length === 0
+              ? "The list is empty"
+              : `${placeCounts.length} on the list`}
+            {" · "}
+            {placeCounts.filter((row) => row.memberId === member.id).length} yours
+          </span>
+        </Link>
+
+        <Link href={`/g/${secret}/history`} className={styles.door}>
+          <strong>Past dinners</strong>
+          <span>
+            {dinners[0]?.n
+              ? `${dinners[0].n} so far${askAbout && !existing ? " · one needs your score" : ""}`
+              : "None yet"}
+          </span>
+        </Link>
+      </nav>
 
       {vote ? <Vote secret={secret} view={vote} me={member.name} /> : null}
+
       <FinishSetup secret={secret} />
+      <p className={styles.footer}>
+        <Link href={`/g/${secret}/start`}>Notifications and setup</Link>
+      </p>
     </>
   );
 }
@@ -154,51 +166,17 @@ async function placeLabel(outing: NonNullable<Awaited<ReturnType<typeof latestDo
   return reveal.place ?? monthName(outing.month);
 }
 
-function daysAgo(day: string): number {
+function daysAgo(day: string, today: string): number {
   const then = new Date(`${day}T00:00:00Z`).getTime();
-  const now = new Date(`${todayInLondon()}T00:00:00Z`).getTime();
+  const now = new Date(`${today}T00:00:00Z`).getTime();
   return Math.round((now - then) / 86_400_000);
 }
 
-/**
- * The vote on the month after next, or null once that month has an Outing.
- *
- * Shown in both states of this screen: while a month is open and after it has
- * closed, because the vote runs until the 1st regardless of where the dinner
- * cycle is.
- */
+/** The vote on the month after next, or null once that month has an Outing. */
 async function loadVoteBlock(memberId: string) {
   const month = voteMonthFor(todayInLondon());
   if (await isSettled(month)) return null;
   return loadVote(month, memberId, await rotaFor(month));
-}
-
-/** The line under the calendar: where the month has got to, in words. */
-function standing(view: Awaited<ReturnType<typeof loadMonthView>>): string {
-  const leader = view.leaders[0];
-  const waiting =
-    view.silentCount === 0
-      ? "Everyone has answered."
-      : `${view.silentCount} of ${view.memberCount} ${
-          view.silentCount === 1 ? "has" : "have"
-        } not answered yet.`;
-
-  if (!leader) return `Nobody has picked an evening yet. ${waiting}`;
-
-  return `${shortDate(leader.day)} leads with ${leader.count} of ${
-    view.memberCount
-  }. ${waiting}`;
-}
-
-function BetweenMonths() {
-  return (
-    <>
-      <h1 className={styles.title}>Nothing open</h1>
-      <p className={styles.lede}>
-        The next month opens on the 1st. Add somewhere you fancy in the meantime.
-      </p>
-    </>
-  );
 }
 
 async function PickYourName({ secret }: { secret: string }) {

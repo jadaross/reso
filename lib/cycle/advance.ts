@@ -4,7 +4,7 @@ import { getDb } from "@/lib/db";
 import { advanceAvailability, availability, members, outings } from "@/lib/db/schema";
 
 import { addMonths, monthOf, type DayString, type MonthString } from "./dates";
-import { daysWithin, monthsAhead } from "./year";
+import { daysWithin, monthsShown } from "./year";
 
 export type YearMonth = {
   month: MonthString;
@@ -23,7 +23,7 @@ export async function loadYear(
   today: DayString,
 ): Promise<YearMonth[]> {
   const db = getDb();
-  const months = monthsAhead(today);
+  const months = monthsShown(today);
   const first = months[0];
   const end = addMonths(months[months.length - 1], 1);
 
@@ -103,7 +103,7 @@ export async function saveYear(
   today: DayString,
 ): Promise<SaveYearResult> {
   const db = getDb();
-  const window = new Set(monthsAhead(today));
+  const window = new Set(monthsShown(today));
 
   for (const change of changes) {
     if (!window.has(change.month)) {
@@ -226,7 +226,7 @@ export type Everyone = {
  */
 export async function loadEveryone(today: DayString): Promise<Everyone> {
   const db = getDb();
-  const months = [monthOf(today), ...monthsAhead(today)];
+  const months = monthsShown(today);
   const first = months[0];
   const end = addMonths(months[months.length - 1], 1);
 

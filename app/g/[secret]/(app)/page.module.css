@@ -110,3 +110,50 @@
   font-size: var(--step-3);
   margin: 0 0 14px;
 }
+
+/* The doors: one card per tab, saying what is waiting behind it. */
+.doors {
+  display: grid;
+  gap: 8px;
+  margin-top: 22px;
+}
+
+.door {
+  display: block;
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  text-decoration: none;
+  color: var(--bone);
+}
+
+.door strong {
+  display: block;
+  font-family: var(--font-bricolage), sans-serif;
+  font-size: var(--step-1);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.door span {
+  display: block;
+  color: var(--muted);
+  font-size: var(--step--1);
+  margin-top: 2px;
+}
+
+.doorHot {
+  border-color: var(--amber);
+}
+
+.footer {
+  margin: 28px 0 0;
+  font-size: var(--step--1);
+}
+
+.footer a {
+  color: var(--muted);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--hairline-strong);
+}

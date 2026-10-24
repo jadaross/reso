@@ -71,7 +71,7 @@ export default async function Restaurants({
   return (
     <>
       <Eyebrow text={all.length === 1 ? "1 place" : `${all.length} places`} />
-      <h1 className={styles.title}>Restaurants</h1>
+      <h1 className={styles.title}>Places</h1>
       <p className={styles.lede}>
         Add anywhere you fancy. Only you see yours, so the draw stays a surprise.
         The same place added twice goes in twice.

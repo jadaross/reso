@@ -1,8 +1,9 @@
 "use server";
 
-import { and, asc, eq, inArray, isNull, ne } from "drizzle-orm";
+import { and, asc, eq, inArray, isNull } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
+import { drawPoolFor } from "@/lib/cycle/candidates";
 import { closeDueOutings } from "@/lib/cycle/close";
 import { drawFrom } from "@/lib/cycle/draw";
 import { getDb } from "@/lib/db";
@@ -13,7 +14,6 @@ import {
   draws,
   members,
   outings,
-  picks,
   pushSubscriptions,
   type MonthChoice,
 } from "@/lib/db/schema";
@@ -212,7 +212,12 @@ export async function reroll(
 
   const db = getDb();
   const [outing] = await db
-    .select({ id: outings.id, tier: outings.tier, drawnPickId: outings.drawnPickId })
+    .select({
+      id: outings.id,
+      tier: outings.tier,
+      drawnPickId: outings.drawnPickId,
+      chosenDate: outings.chosenDate,
+    })
     .from(outings)
     .where(eq(outings.id, outingId))
     .limit(1);
@@ -228,16 +233,12 @@ export async function reroll(
     return { ok: false, error: "You've already redrawn this month." };
   }
 
-  // Everything in the tier except the place that just failed.
-  const candidates = await db
-    .select({ id: picks.id })
-    .from(picks)
-    .innerJoin(members, eq(members.id, picks.memberId))
-    .where(
-      outing.drawnPickId
-        ? and(eq(picks.tier, outing.tier), ne(picks.id, outing.drawnPickId))
-        : eq(picks.tier, outing.tier),
-    );
+  // The same pool Close Day drew from — narrowed to people free on the Chosen
+  // Date, which follows the date if the Admin has since moved it — minus the
+  // place that just failed.
+  const { candidates } = await drawPoolFor(outing.id, outing.tier, outing.chosenDate, {
+    exclude: outing.drawnPickId,
+  });
 
   const drawn = drawFrom(candidates);
   if (!drawn) {
@@ -261,13 +262,14 @@ export async function reroll(
 }
 
 /** Close Availability early, once everyone is in. Runs the same path as Close Day. */
-export async function closeEarly(secret: string): Promise<AdminResult> {
+export async function closeEarly(secret: string, outingId: string): Promise<AdminResult> {
   await requireAdmin();
 
   // closeDueOutings closes anything whose Close Day has passed, so handing it a
   // date far enough ahead runs exactly the same code the cron runs, rather than a
-  // second implementation that could drift from it.
-  const results = await closeDueOutings("2999-12-31");
+  // second implementation that could drift from it. Scoped to the one month on
+  // screen, so a second open month is left alone.
+  const results = await closeDueOutings("2999-12-31", outingId);
   refresh(secret);
 
   if (results.length === 0) return { ok: false, error: "Nothing was open." };

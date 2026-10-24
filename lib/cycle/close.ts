@@ -7,10 +7,10 @@ import {
   draws,
   members,
   outings,
-  picks,
 } from "@/lib/db/schema";
 
 import { seedFromAdvance } from "./advance";
+import { drawPoolFor } from "./candidates";
 import { computeChosenDate } from "./chosen-date";
 import {
   addMonths,
@@ -94,6 +94,7 @@ export type CloseResult = {
  */
 export async function closeDueOutings(
   today: DayString = todayInLondon(),
+  onlyOutingId?: string,
 ): Promise<CloseResult[]> {
   const db = getDb();
 
@@ -107,7 +108,11 @@ export async function closeDueOutings(
     .from(outings)
     .where(eq(outings.status, "open"));
 
-  const due = open.filter((outing) => closeDayFor(outing.month) <= today);
+  const due = open.filter(
+    (outing) =>
+      (onlyOutingId ? outing.id === onlyOutingId : true) &&
+      closeDayFor(outing.month) <= today,
+  );
   const results: CloseResult[] = [];
 
   for (const outing of due) {
@@ -122,15 +127,13 @@ export async function closeDueOutings(
     const chosen = computeChosenDate(daysInMonth(outing.month), tapped);
 
     // A dinner party has no Draw: nobody's Pick is a ticket, and the empty-tier
-    // warning below is not a warning at all.
-    const candidates =
+    // warning below is not a warning at all. Otherwise the pool is the tier,
+    // narrowed to the Picks of people free on the Chosen Date (ticket 18).
+    const pool =
       outing.kind === "party"
-        ? []
-        : await db
-            .select({ id: picks.id })
-            .from(picks)
-            .innerJoin(members, eq(members.id, picks.memberId))
-            .where(eq(picks.tier, outing.tier));
+        ? { candidates: [], inTier: 0, narrowed: false }
+        : await drawPoolFor(outing.id, outing.tier, chosen.chosenDate);
+    const candidates = pool.candidates;
 
     const drawn = drawFrom(candidates);
 
@@ -186,7 +189,7 @@ export async function closeDueOutings(
       // is still fog on the wayfinder map. Closing with no Drawn Pick and
       // surfacing it is the smallest honest behaviour until that is settled — it
       // does not silently fall through to another tier.
-      emptyTier: outing.kind !== "party" && candidates.length === 0,
+      emptyTier: outing.kind !== "party" && pool.inTier === 0,
     });
   }
 

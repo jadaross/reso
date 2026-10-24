@@ -58,7 +58,7 @@ export default async function History({
                     ? readableDate(visit.chosenDate)
                     : monthName(visit.month)}
                   {" · "}
-                  {visit.went} {visit.went === 1 ? "person" : "people"}
+                  {visit.went} of us{visit.guests > 0 ? ` + ${visit.guests} ${visit.guests === 1 ? "guest" : "guests"}` : ""}
                   {" · "}
                   {TIER_LABEL[visit.tier]}
                   {visit.pickedBy ? ` · ${visit.pickedBy}’s pick` : ""}

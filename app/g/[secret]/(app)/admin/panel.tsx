@@ -190,7 +190,7 @@ export function Panel({ secret, people, outings }: PanelProps) {
               <button
                 type="button"
                 disabled={pending}
-                onClick={() => run(() => closeEarly(secret))}
+                onClick={() => run(() => closeEarly(secret, outing.id))}
               >
                 Close now and draw
               </button>

@@ -31,6 +31,11 @@ export function monthsAhead(
   return Array.from({ length: count }, (_, index) => addMonths(first, index));
 }
 
+/** This month and the year after it: what the Dates tab shows. */
+export function monthsShown(today: DayString): MonthString[] {
+  return [monthOf(today), ...monthsAhead(today)];
+}
+
 /** Every day of `month` that falls on `weekday` (0 = Sunday … 6 = Saturday). */
 export function daysOnWeekday(month: MonthString, weekday: number): DayString[] {
   return daysInMonth(month).filter((day) => weekdayOf(day) === weekday);

@@ -1,10 +1,10 @@
 /**
- * The Draw: a uniformly random choice among every Pick in the Outing's tier.
+ * The Draw: a uniformly random choice among the candidate Picks.
  *
- * Every Pick is one ticket. Nothing is filtered by who is available, nothing is
- * excluded for having been visited before, and duplicates are not merged — so a
- * place two Members both added really is twice as likely. That is the design, not
- * an oversight.
+ * Every Pick is one ticket. Nothing is excluded for having been visited before
+ * and duplicates are not merged — so a place two Members both added really is
+ * twice as likely. Which Picks are candidates is decided in ./candidates.ts:
+ * the tier, narrowed to the people free on the Chosen Date (ticket 18).
  */
 
 /**

@@ -25,9 +25,17 @@
 }
 
 .address {
+  display: block;
   font-size: var(--step-0);
   color: var(--bone-quiet);
   margin: 0;
+  text-decoration: none;
+}
+
+a.address {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--bone-rule);
 }
 
 .stamp {

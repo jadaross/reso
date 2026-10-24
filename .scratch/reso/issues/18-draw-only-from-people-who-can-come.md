@@ -9,14 +9,14 @@ free on that date go into the Draw.
 
 **Blocked by:** nothing
 
-**Status:** open
+**Status:** done
 
-- [ ] The Draw at Close Day is built from the Picks of Members who are available on the Chosen Date, not from the whole tier
-- [ ] The Admin's reroll draws from the same narrowed pool, so the two paths cannot disagree
-- [ ] The reveal's "why it won" counts tickets from the same pool it actually drew from
-- [ ] The empty-tier warning on the Admin panel and the empty-tier message reflect the same rule
-- [ ] Archiving a Member keeps behaving as ticket 16 decided: their Picks stay in the pool
-- [ ] `lib/cycle/cycle.test.ts` covers a Pick belonging to someone unavailable on the Chosen Date, and the case where the narrowing empties the pool
+- [x] The Draw at Close Day is built from the Picks of Members who are available on the Chosen Date, not from the whole tier
+- [x] The Admin's reroll draws from the same narrowed pool, so the two paths cannot disagree
+- [x] The reveal's "why it won" counts tickets from the same pool it actually drew from
+- [x] The empty-tier warning on the Admin panel and the empty-tier message reflect the same rule
+- [x] Archiving a Member keeps behaving as ticket 16 decided: their Picks stay in the pool
+- [x] `lib/cycle/cycle.test.ts` covers a Pick belonging to someone unavailable on the Chosen Date, and the case where the narrowing empties the pool
 
 ## Where it is
 
@@ -51,3 +51,11 @@ are still not merged.
   Drawn Pick (the honest empty-tier path that already exists) are both defensible. Ask Jada.
 - **Does the reroll re-narrow?** If the Admin has since moved the Chosen Date to another candidate
   date, the pool should follow the new date rather than the one the month closed on.
+
+## Done
+
+`lib/cycle/candidates.ts` is the one answer to "what is in this month's draw": the tier's Picks,
+narrowed to Members free on the Chosen Date. Close Day, the reroll (which follows a moved date),
+and the empty-tier warning all read it. Jada's answer to the open question: when the narrowing
+empties the pool, fall back to the whole tier. Tests cover the narrowing, a double ticket, and the
+fallback.

@@ -7,13 +7,13 @@ import { todayInLondon } from "@/lib/cycle/dates";
 import { currentMember } from "@/lib/identity/guard";
 
 /**
- * Save whole months of Availability at once, for the year screen.
+ * Save whole months of Availability at once, for the Dates tab.
  *
  * Each month arrives as its complete set of days. Anything malformed is dropped on
  * the way through rather than rejected, because the only thing the server needs
  * to hold the line on is which months can be answered and whose answer it is.
  */
-export async function saveYearAction(
+export async function saveDatesAction(
   secret: string,
   changes: YearChange[],
 ): Promise<SaveYearResult> {
@@ -46,7 +46,7 @@ export async function saveYearAction(
 
   if (result.ok) {
     revalidatePath(`/g/${secret}`);
-    revalidatePath(`/g/${secret}/settings`);
+    revalidatePath(`/g/${secret}/dates`);
   }
   return result;
 }

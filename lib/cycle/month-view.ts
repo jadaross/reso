@@ -163,6 +163,8 @@ export type Reveal = {
   address: string | null;
   /** Who added the drawn place — booking it is their job. */
   pickedBy: string | null;
+  /** Somewhere to tap to find it: the pasted link, or a Maps search for the name. */
+  mapLink: string | null;
   chosenDate: DayString | null;
   tier: "low" | "medium" | "high";
   month: string;
@@ -197,6 +199,8 @@ export async function loadReveal(
             name: picks.name,
             address: picks.address,
             tier: picks.tier,
+            rawLink: picks.rawLink,
+            linkStatus: picks.linkStatus,
             pickedBy: members.name,
             pickedById: members.id,
           })
@@ -252,6 +256,13 @@ export async function loadReveal(
     area: null,
     address: drawn[0]?.address ?? null,
     pickedBy: drawn[0]?.pickedBy ?? null,
+    mapLink: drawn[0]
+      ? drawn[0].linkStatus === "resolved" && drawn[0].rawLink
+        ? drawn[0].rawLink
+        : `https://maps.apple.com/?q=${encodeURIComponent(
+            [drawn[0].name, drawn[0].address ?? "London"].join(", "),
+          )}`
+      : null,
     chosenDate: outing.chosenDate,
     tier: outing.tier,
     month: outing.month,
@@ -320,6 +331,8 @@ export type VisitRow = {
   /** Who went, as Member ids, so the screen knows whether the reader can rate it. */
   attendees: string[];
   went: number;
+  /** Guests who came with someone who went. */
+  guests: number;
   pickedBy: string | null;
   ratingCount: number;
   averageScore: number | null;
@@ -348,7 +361,7 @@ export async function loadVisits(): Promise<VisitRow[]> {
 
   const ids = done.map((outing) => outing.id);
 
-  const [attendanceRows, ratingRows, drawnPicks] = await Promise.all([
+  const [attendanceRows, ratingRows, drawnPicks, plusOneRows] = await Promise.all([
     db
       .select({ outingId: attendance.outingId, memberId: attendance.memberId })
       .from(attendance)
@@ -373,6 +386,10 @@ export async function loadVisits(): Promise<VisitRow[]> {
       })
       .from(picks)
       .innerJoin(members, eq(members.id, picks.memberId)),
+    db
+      .select({ outingId: plusOnes.outingId, memberId: plusOnes.memberId })
+      .from(plusOnes)
+      .where(inArray(plusOnes.outingId, ids)),
   ]);
 
   const pickById = new Map(drawnPicks.map((pick) => [pick.id, pick]));
@@ -393,6 +410,14 @@ export async function loadVisits(): Promise<VisitRow[]> {
         .filter((row) => row.outingId === outing.id)
         .map((row) => row.memberId),
       went: attendanceRows.filter((row) => row.outingId === outing.id).length,
+      guests: guestsGoing(
+        attendanceRows
+          .filter((row) => row.outingId === outing.id)
+          .map((row) => row.memberId),
+        plusOneRows
+          .filter((row) => row.outingId === outing.id)
+          .map((row) => row.memberId),
+      ).length,
       pickedBy: pick?.pickedBy ?? null,
       ratingCount: mine.length,
       averageScore: mine.length

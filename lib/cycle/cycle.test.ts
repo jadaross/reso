@@ -1,9 +1,10 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import { daysOnWeekday, daysWithin, monthsAhead } from "./year";
+import { daysOnWeekday, daysWithin, monthsAhead, monthsShown } from "./year";
 import { announcementText, bookingLine, guestsPhrase } from "./announcement";
 import { bookingFits, guestsGoing, headcount } from "./booking";
+import { narrowToFree } from "./candidates";
 import { computeChosenDate } from "./chosen-date";
 import {
   addMonths,
@@ -337,6 +338,13 @@ describe("message wording", () => {
 });
 
 describe("the year ahead", () => {
+  it("shows this month and the twelve after it", () => {
+    const shown = monthsShown("2026-10-24");
+    assert.equal(shown[0], "2026-10-01");
+    assert.equal(shown.length, 13);
+    assert.equal(shown.at(-1), "2027-10-01");
+  });
+
   it("starts next month and runs for a year", () => {
     const months = monthsAhead("2026-09-20");
     assert.equal(months.length, 12);
@@ -447,5 +455,35 @@ describe("the table", () => {
     assert.equal(bookingFits(null, 8), true);
     assert.equal(bookingFits(7, 7), true);
     assert.equal(bookingFits(7, 8), false);
+  });
+});
+
+describe("who is in the draw", () => {
+  const inTier = [
+    { id: "p1", memberId: "ada" },
+    { id: "p2", memberId: "bo" },
+    { id: "p3", memberId: "bo" },
+    { id: "p4", memberId: "cy" },
+  ];
+
+  it("keeps only the Picks of people free on the Chosen Date", () => {
+    const { candidates, narrowed } = narrowToFree(inTier, new Set(["bo", "cy"]));
+    assert.deepEqual(candidates.map((pick) => pick.id), ["p2", "p3", "p4"]);
+    assert.equal(narrowed, true);
+  });
+
+  it("still counts a place twice when the same free person added it twice", () => {
+    const { candidates } = narrowToFree(inTier, new Set(["bo"]));
+    assert.equal(candidates.length, 2);
+  });
+
+  it("falls back to the whole tier when nobody free that night added anything", () => {
+    const { candidates, narrowed } = narrowToFree(inTier, new Set(["dee"]));
+    assert.equal(candidates.length, 4);
+    assert.equal(narrowed, false);
+  });
+
+  it("has nothing to draw from an empty tier either way", () => {
+    assert.deepEqual(narrowToFree([], new Set(["ada"])).candidates, []);
   });
 });

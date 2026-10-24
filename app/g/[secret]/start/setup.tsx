@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 import styles from "./start.module.css";
 
@@ -15,7 +16,10 @@ type Stage = "install" | "notifications" | "done";
  * install first and only offers the notification button once it is running as an
  * app — and it can tell the difference, so nobody is shown a step they cannot do.
  */
+const SKIPPED = "reso-install-skipped";
+
 export function Setup({ secret, name }: { secret: string; name: string }) {
+  const router = useRouter();
   const standalone = useStandalone();
   const permission = useNotificationPermission();
   const [chosen, setChosen] = useState<NotificationPermission | null>(null);
@@ -29,6 +33,13 @@ export function Setup({ secret, name }: { secret: string; name: string }) {
     : granted
       ? "done"
       : "notifications";
+
+  // Nothing left to do on this phone, or the install step was already waved
+  // away here: straight on to the dinner rather than the same screen again.
+  useEffect(() => {
+    if (stage === "done") router.replace(`/g/${secret}`);
+    if (stage === "install" && remembered(SKIPPED)) router.replace(`/g/${secret}`);
+  }, [stage, router, secret]);
 
   useEffect(() => {
     if (!standalone || !("serviceWorker" in navigator)) return;
@@ -99,7 +110,11 @@ export function Setup({ secret, name }: { secret: string; name: string }) {
           it remembers you for good.
         </p>
 
-        <Link className={styles.skip} href={`/g/${secret}`}>
+        <Link
+          className={styles.skip}
+          href={`/g/${secret}`}
+          onClick={() => remember(SKIPPED)}
+        >
           I&rsquo;ll do it later
         </Link>
       </>
@@ -154,6 +169,22 @@ export function Setup({ secret, name }: { secret: string; name: string }) {
       </Link>
     </>
   );
+}
+
+function remembered(key: string): boolean {
+  try {
+    return window.localStorage.getItem(key) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function remember(key: string): void {
+  try {
+    window.localStorage.setItem(key, "1");
+  } catch {
+    // Private browsing, or storage blocked: the screen simply shows again next time.
+  }
 }
 
 function isStandalone(): boolean {
