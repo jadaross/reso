@@ -7,13 +7,13 @@ who is bringing them, so the group finds out at the table.
 
 **Blocked by:** nothing
 
-**Status:** open
+**Status:** done
 
-- [ ] The reveal's going-list names the host of each guest, e.g. "Going: Ada, Lottie, Rowan, plus Lottie's guest"
-- [ ] The announcement text — the same one that goes to push and the WhatsApp share — attributes guests the same way
-- [ ] The dinner-party ticket attributes guests too, not only the restaurant ticket
-- [ ] The headcount still adds up, whatever the wording
-- [ ] `lib/cycle/cycle.test.ts` covers one guest, several guests, and none
+- [x] The reveal's going-list names the host of each guest, e.g. "Going: Ada, Lottie, Rowan, plus Lottie's guest"
+- [x] The announcement text — the same one that goes to push and the WhatsApp share — attributes guests the same way
+- [x] The dinner-party ticket attributes guests too, not only the restaurant ticket
+- [x] The headcount still adds up, whatever the wording
+- [x] `lib/cycle/cycle.test.ts` covers one guest, several guests, and none
 
 ## Where it is
 
@@ -43,3 +43,10 @@ only count a guest whose host is in the going-list.
 
 Jada rewrites the messages herself under ticket 05, so the exact phrasing here is a draft. Keep it
 in `lib/cycle/announcement.ts` with the rest, so push and the share can never disagree.
+
+## Done
+
+`Reveal.guests` and `AnnouncementFacts.guests` carry the hosts' names, and only the hosts who are
+themselves going — `lib/cycle/booking.ts` has the rule. The ticket and the shared text both read
+"7 of us, including Jada's and Lottie's guests". Tests in `cycle.test.ts` cover none, one and
+several.

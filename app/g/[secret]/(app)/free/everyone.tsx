@@ -104,6 +104,10 @@ export function Everyone({
         </div>
       </div>
 
+      {day ? <Detail day={day} free={freeOn(day)} picked={picked} nameOf={nameOf} me={me} /> : (
+        <p className={styles.hint}>Tap a day to see who can do it.</p>
+      )}
+
       <div className={styles.grid} role="group" aria-label={`${monthName(month)}, who is free`}>
         {DOW.map((letter, index) => (
           <div className={styles.dow} key={index} aria-hidden>
@@ -143,10 +147,6 @@ export function Everyone({
           );
         })}
       </div>
-
-      {day ? <Detail day={day} free={freeOn(day)} picked={picked} nameOf={nameOf} me={me} /> : (
-        <p className={styles.hint}>Tap a day to see who can do it.</p>
-      )}
     </>
   );
 }

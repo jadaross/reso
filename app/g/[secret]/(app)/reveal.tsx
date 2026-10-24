@@ -1,30 +1,33 @@
 import {
   announcementText,
+  guestsPhrase,
   monthName,
-  readableDate,
   shortDate,
 } from "@/lib/cycle/announcement";
+import { headcount } from "@/lib/cycle/booking";
 import type { Reveal as RevealData } from "@/lib/cycle/month-view";
 
 import styles from "./reveal.module.css";
 import { ShareButton } from "./share-button";
+import { TicketControls } from "./ticket-controls";
 
 const TIER_LABEL = { low: "Low", medium: "Medium", high: "High" } as const;
 
 /**
- * The month, once it is settled.
+ * The month, once it is settled: the ticket.
  *
- * The one thing this screen must never do is let the group think the table is
- * booked. Nobody books a restaurant automatically, so it says so, every time,
- * until someone marks it done.
+ * Whoever added the drawn place books it, and the ticket says so by name until
+ * someone taps "I've booked it". Who is coming can still change until the night,
+ * and the headcount follows — so a table booked for seven that is now eight is
+ * shown as exactly that, rather than the booking quietly rewriting itself.
  */
 export function Reveal({
   data,
-  outingId,
+  secret,
   isAdmin,
 }: {
   data: RevealData;
-  outingId: string;
+  secret: string;
   isAdmin: boolean;
 }) {
   const text = announcementText({
@@ -35,125 +38,55 @@ export function Reveal({
     area: data.area,
     tier: data.tier,
     going: data.going.length,
-    plusOnes: data.plusOnes,
+    guests: data.guests,
     tickets: data.tickets,
+    pickedBy: data.pickedBy,
+    bookedBy: data.bookedBy,
   });
 
-  if (data.kind === "party") {
-    return <PartyTicket data={data} outingId={outingId} isAdmin={isAdmin} text={text} />;
-  }
+  const heads = headcount(data.going, data.guests);
+  const over = data.status === "done";
 
-  if (!data.place) {
-    return (
-      <>
-        <div className={styles.empty}>
-          <strong>
-            {data.chosenDate
-              ? `${readableDate(data.chosenDate)} works for most of you.`
-              : "Nobody put any dates in."}
-          </strong>
-          {data.chosenDate
-            ? `There was nothing in the ${TIER_LABEL[data.tier].toLowerCase()} list to draw from, so there is no restaurant. Add some and ask Jada to draw again.`
-            : "Without any dates there is nothing to book."}
-        </div>
-        <p className={styles.draft}>{text}</p>
-      </>
-    );
-  }
-
-  const heads = data.going.length + data.plusOnes;
-
-  return (
-    <>
-      <div className={styles.ticket}>
-        <div className={styles.stamp}>{TIER_LABEL[data.tier].toUpperCase()}</div>
-        <div className={styles.month}>{monthName(data.month)}</div>
-        <p className={styles.place}>{data.place}</p>
-        {data.address ? <p className={styles.address}>{data.address}</p> : null}
-
-        <div className={styles.tear} />
-
-        <div className={styles.facts}>
-          <div>
-            <span>Date</span>
-            <strong>
-              {data.chosenDate ? shortDate(data.chosenDate) : "not set"}
-            </strong>
-          </div>
-          <div>
-            <span>Table for</span>
-            <strong>{heads}</strong>
-          </div>
-          <div>
-            <span>Booked</span>
-            <strong>Not yet</strong>
-          </div>
-        </div>
-      </div>
-
-      <ShareButton text={text} outingId={outingId} />
-
-      <p className={styles.why}>
-        {data.tickets > 1
-          ? `${data.tickets} of you had this one down, so it went into the draw ${data.tickets} times. `
-          : ""}
-        Drawn from {data.candidates}{" "}
-        {data.candidates === 1 ? "ticket" : "tickets"} in the{" "}
-        {TIER_LABEL[data.tier].toLowerCase()} list
-        {data.rerolled ? ", after a redraw" : ""}. Someone still needs to book it.
-      </p>
-
-      {data.going.length > 0 ? (
-        <p className={styles.why}>
-          Going: {data.going.join(", ")}
-          {data.plusOnes > 0
-            ? `, plus ${data.plusOnes} ${data.plusOnes === 1 ? "guest" : "guests"}`
-            : ""}
-          .
-        </p>
-      ) : null}
-
-      {isAdmin ? <p className={styles.draft}>{text}</p> : null}
-    </>
-  );
-}
-
-/**
- * A dinner party has no place to draw and no table to book. It has a date, a
- * headcount, and a host still to be found — which, like booking, is a human job.
- */
-function PartyTicket({
-  data,
-  outingId,
-  isAdmin,
-  text,
-}: {
-  data: RevealData;
-  outingId: string;
-  isAdmin: boolean;
-  text: string;
-}) {
   if (!data.chosenDate) {
     return (
+      <div className={styles.empty}>
+        <strong>Nobody put any dates in for {monthName(data.month)}.</strong>
+        {data.kind === "party"
+          ? "So there is no dinner party to host."
+          : "So there is nothing to book."}
+      </div>
+    );
+  }
+
+  if (data.kind === "restaurant" && !data.place) {
+    return (
       <>
         <div className={styles.empty}>
-          <strong>Nobody put any dates in.</strong>
-          Without any dates there is no dinner party to host.
+          <strong>{shortDate(data.chosenDate)} works for most of you.</strong>
+          Nothing was in the {TIER_LABEL[data.tier].toLowerCase()} list to draw
+          from. Add some places and ask the Admin to draw.
         </div>
-        <p className={styles.draft}>{text}</p>
+        {isAdmin ? <p className={styles.draft}>{text}</p> : null}
       </>
     );
   }
 
-  const heads = data.going.length + data.plusOnes;
+  const party = data.kind === "party";
 
   return (
     <>
       <div className={styles.ticket}>
-        <div className={styles.stamp}>DINNER PARTY</div>
+        <div className={styles.stamp}>
+          {party ? "DINNER PARTY" : TIER_LABEL[data.tier].toUpperCase()}
+        </div>
         <div className={styles.month}>{monthName(data.month)}</div>
-        <p className={styles.place}>At someone&rsquo;s</p>
-        <p className={styles.address}>You voted for a night in this month.</p>
+        <p className={styles.place}>{party ? "At someone’s" : data.place}</p>
+        {party ? null : data.address ? (
+          <p className={styles.address}>{data.address}</p>
+        ) : null}
+        {!party && data.pickedBy ? (
+          <p className={styles.picked}>Picked by {data.pickedBy}</p>
+        ) : null}
 
         <div className={styles.tear} />
 
@@ -163,33 +96,61 @@ function PartyTicket({
             <strong>{shortDate(data.chosenDate)}</strong>
           </div>
           <div>
-            <span>Coming</span>
+            <span>{over ? "Went" : party ? "Coming" : "Table for"}</span>
             <strong>{heads}</strong>
           </div>
-          <div>
-            <span>Host</span>
-            <strong>Not yet</strong>
-          </div>
+          {over ? null : party ? (
+            <div>
+              <span>Host</span>
+              <strong>Not yet</strong>
+            </div>
+          ) : (
+            <div>
+              <span>Booked</span>
+              <strong className={data.bookedBy ? undefined : styles.pendingFact}>
+                {data.bookedBy
+                  ? `by ${data.bookedBy}`
+                  : data.pickedBy
+                    ? `${data.pickedBy}’s job`
+                    : "Not yet"}
+              </strong>
+            </div>
+          )}
         </div>
       </div>
 
-      <ShareButton text={text} outingId={outingId} />
-
-      <p className={styles.why}>
-        No draw this month. Someone still needs to offer their kitchen.
+      <p className={styles.going}>
+        {over ? "Went" : "Going"}: {data.going.length > 0 ? data.going.join(", ") : "nobody yet"}
+        {data.guests.length > 0 ? `, plus ${guestsPhrase(data.guests)}` : ""}.
       </p>
 
-      {data.going.length > 0 ? (
+      {over ? null : (
+        <TicketControls
+          secret={secret}
+          outingId={data.outingId}
+          party={party}
+          myGoing={data.myGoing}
+          myPlusOne={data.myPlusOne}
+          bookedBy={data.bookedBy}
+          bookedFor={data.bookedFor}
+          heads={heads}
+        />
+      )}
+
+      {over ? null : <ShareButton text={text} outingId={data.outingId} />}
+
+      {!over && !party && data.candidates > 0 ? (
         <p className={styles.why}>
-          Coming: {data.going.join(", ")}
-          {data.plusOnes > 0
-            ? `, plus ${data.plusOnes} ${data.plusOnes === 1 ? "guest" : "guests"}`
+          {data.tickets > 1
+            ? `${data.tickets} of you had it down. `
             : ""}
-          .
+          Drawn from {data.candidates}{" "}
+          {data.candidates === 1 ? "ticket" : "tickets"}
+          {data.rerolled ? ", after a redraw" : ""}.
         </p>
       ) : null}
 
-      {isAdmin ? <p className={styles.draft}>{text}</p> : null}
+      {isAdmin && !over ? <p className={styles.draft}>{text}</p> : null}
     </>
   );
 }

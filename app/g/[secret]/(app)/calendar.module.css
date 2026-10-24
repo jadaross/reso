@@ -49,9 +49,9 @@
 /* One tick per Member: how many of the group can do this evening. */
 .bars {
   display: flex;
-  gap: 1.5px;
-  height: 3px;
-  width: 66%;
+  gap: 2px;
+  height: 4px;
+  width: 70%;
 }
 
 .bars i {
@@ -61,7 +61,8 @@
 }
 
 .bars i.filled {
-  background: var(--muted);
+  background: var(--amber);
+  opacity: 0.8;
 }
 
 .on .bars i {
@@ -86,4 +87,40 @@
 .plusOneOn {
   border-color: var(--amber);
   color: var(--bone);
+}
+
+/* One line, under the grid, so a first-timer knows what the colours mean. */
+.legend {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin: 10px 0 0;
+  font-size: var(--step--1);
+  color: var(--muted);
+}
+
+.legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legendOn {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  background: var(--amber);
+}
+
+.legendBars {
+  display: inline-flex;
+  gap: 2px;
+}
+
+.legendBars i {
+  width: 5px;
+  height: 4px;
+  border-radius: 1px;
+  background: var(--amber);
+  opacity: 0.8;
 }

@@ -99,6 +99,20 @@ export function Calendar({
         })}
       </div>
 
+      <p className={styles.legend} aria-hidden>
+        <span>
+          <i className={styles.legendOn} /> you can do it
+        </span>
+        <span>
+          <i className={styles.legendBars}>
+            <i />
+            <i />
+            <i />
+          </i>
+          how many of you can
+        </span>
+      </p>
+
       <button
         type="button"
         className={`${styles.plusOne} ${plusOne ? styles.plusOneOn : ""}`}

@@ -67,7 +67,7 @@ export function Frame({
               className={styles.headerLink}
               aria-current={onSettings ? "page" : undefined}
             >
-              Settings
+              Your year
             </Link>
             {isAdmin ? (
               <>

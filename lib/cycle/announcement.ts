@@ -10,9 +10,15 @@ export type AnnouncementFacts = {
   place: string | null;
   area: string | null;
   tier: PriceTier;
+  /** How many Members are going. */
   going: number;
-  plusOnes: number;
+  /** The Members bringing a guest, by name — only those who are themselves going. */
+  guests: string[];
   tickets: number;
+  /** Who added the drawn place. Booking it is their job. */
+  pickedBy?: string | null;
+  /** Who has booked the table, once someone has. */
+  bookedBy?: string | null;
 };
 
 /**
@@ -29,21 +35,38 @@ export function announcementText(facts: AnnouncementFacts): string {
     return `${month}: nobody put any dates in, so there's nothing booked.`;
   }
   if (facts.kind === "party") {
-    const heads = facts.going + facts.plusOnes;
-    return `${month}: dinner party — ${readableDate(facts.chosenDate)}. ${heads} of us. Someone needs to host.`;
+    return `${month}: dinner party — ${readableDate(facts.chosenDate)}. ${headcountLine(facts)}. Someone needs to host.`;
   }
   if (!facts.place) {
     return `${month}: ${readableDate(facts.chosenDate)} works for most of us, but there was nothing in the ${facts.tier} list to draw from.`;
   }
 
   const head = `${month}: ${facts.place}${facts.area ? `, ${facts.area}` : ""} — ${readableDate(facts.chosenDate)}.`;
-  const heads = facts.going + facts.plusOnes;
-  const who =
-    facts.plusOnes > 0
-      ? `${heads} of us, including ${facts.plusOnes} ${facts.plusOnes === 1 ? "guest" : "guests"}.`
-      : `${heads} of us.`;
+  return `${head} ${headcountLine(facts)}. ${bookingLine(facts)}`;
+}
 
-  return `${head} ${who} Still needs booking.`;
+/** "7 of us, including Lottie's and Jada's guests" */
+export function headcountLine(facts: Pick<AnnouncementFacts, "going" | "guests">): string {
+  const heads = facts.going + facts.guests.length;
+  if (facts.guests.length === 0) return `${heads} of us`;
+  return `${heads} of us, including ${guestsPhrase(facts.guests)}`;
+}
+
+/** "Lottie's guest", "Lottie's and Jada's guests". */
+export function guestsPhrase(hosts: string[]): string {
+  const owners = hosts.map((name) => `${name}'s`);
+  if (owners.length === 1) return `${owners[0]} guest`;
+  const last = owners[owners.length - 1];
+  return `${owners.slice(0, -1).join(", ")} and ${last} guests`;
+}
+
+/** "Booked by Jada.", "Lottie's booking it.", or "Still needs booking." */
+export function bookingLine(
+  facts: Pick<AnnouncementFacts, "pickedBy" | "bookedBy">,
+): string {
+  if (facts.bookedBy) return `Booked by ${facts.bookedBy}.`;
+  if (facts.pickedBy) return `${facts.pickedBy}'s booking it.`;
+  return "Still needs booking.";
 }
 
 export function monthName(month: string): string {

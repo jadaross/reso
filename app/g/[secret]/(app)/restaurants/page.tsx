@@ -1,7 +1,9 @@
 import { asc, eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
 
-import { openOuting } from "@/lib/cycle/month-view";
+import { monthName, shortDate } from "@/lib/cycle/announcement";
+import { addMonths, closeDayFor } from "@/lib/cycle/dates";
+import { latestSettledOuting, openOuting } from "@/lib/cycle/month-view";
 import { getDb } from "@/lib/db";
 import { members, picks, type PriceTier } from "@/lib/db/schema";
 import { currentAdmin, currentMember } from "@/lib/identity/guard";
@@ -49,6 +51,10 @@ export default async function Restaurants({
   const party = outing?.kind === "party";
   const tier = party ? undefined : outing?.tier;
 
+  // Between Close Day and the 1st nothing is open; say when the next draw is.
+  const settled = outing ? null : await latestSettledOuting();
+  const nextMonth = settled ? addMonths(settled.month, 1) : null;
+
   // What everyone can see: how big the list is and how it splits by tier. Not which
   // restaurants are on it — the pool is deliberately hidden so the Draw stays a
   // surprise and nobody feels judged for what they put in.
@@ -67,8 +73,8 @@ export default async function Restaurants({
       <Eyebrow text={all.length === 1 ? "1 place" : `${all.length} places`} />
       <h1 className={styles.title}>Restaurants</h1>
       <p className={styles.lede}>
-        Add anywhere you fancy. Nobody sees the list, so the draw stays a surprise —
-        and if someone else adds the same place, it goes in twice.
+        Add anywhere you fancy. Only you see yours, so the draw stays a surprise.
+        The same place added twice goes in twice.
       </p>
 
       <AddForm secret={secret} />
@@ -82,7 +88,9 @@ export default async function Restaurants({
             ? `${byTier[tier]} of them are in this month's draw.`
             : party
               ? "This month is a dinner party, so there is no draw."
-              : "No month is open, so nothing is in a draw yet."}
+              : nextMonth
+                ? `${monthName(nextMonth)}'s draw is on ${shortDate(closeDayFor(nextMonth))}.`
+                : "The first draw happens when the first month opens."}
         </span>
         <div className={rows.tally}>
           {(["low", "medium", "high"] as const).map((each) => (
@@ -107,9 +115,7 @@ export default async function Restaurants({
           ))}
         </>
       ) : (
-        <p className={rows.empty}>
-          You haven&rsquo;t added anywhere yet. You only ever see your own.
-        </p>
+        <p className={rows.empty}>You haven&rsquo;t added anywhere yet.</p>
       )}
 
       {admin ? (

@@ -17,11 +17,14 @@ export function Rate({
   outingId,
   place,
   existing,
+  compact = false,
 }: {
   secret: string;
   outingId: string;
   place: string;
   existing: { score: number; note: string | null } | null;
+  /** On a history row: no box, smaller stars, no prompt until tapped. */
+  compact?: boolean;
 }) {
   const [score, setScore] = useState(existing?.score ?? 0);
   const [note, setNote] = useState(existing?.note ?? "");
@@ -42,9 +45,9 @@ export function Rate({
   }
 
   return (
-    <div className={styles.rate}>
+    <div className={compact ? `${styles.rate} ${styles.compact}` : styles.rate}>
       <p className={styles.prompt}>
-        {saved ? `You gave ${place}` : `How was ${place}?`}
+        {saved ? (compact ? "You gave it" : `You gave ${place}`) : compact ? "You were there. How was it?" : `How was ${place}?`}
       </p>
 
       <div className={styles.stars} role="group" aria-label={`Rate ${place}`}>

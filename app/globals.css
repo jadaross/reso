@@ -77,6 +77,13 @@ button {
   color: inherit;
 }
 
+/* iPhone Safari zooms the whole page into any field smaller than 16px. */
+input,
+select,
+textarea {
+  font-size: 16px;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

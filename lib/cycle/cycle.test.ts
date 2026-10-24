@@ -2,7 +2,8 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import { daysOnWeekday, daysWithin, monthsAhead } from "./year";
-import { announcementText } from "./announcement";
+import { announcementText, bookingLine, guestsPhrase } from "./announcement";
+import { bookingFits, guestsGoing, headcount } from "./booking";
 import { computeChosenDate } from "./chosen-date";
 import {
   addMonths,
@@ -224,7 +225,7 @@ describe("the announcement", () => {
     area: "Dalston",
     tier: "low" as const,
     going: 6,
-    plusOnes: 0,
+    guests: [] as string[],
     tickets: 2,
   };
 
@@ -235,12 +236,25 @@ describe("the announcement", () => {
     );
   });
 
-  it("counts guests into the headcount and says so", () => {
-    assert.match(announcementText({ ...base, plusOnes: 2 }), /8 of us, including 2 guests/);
+  it("counts guests into the headcount and says whose they are", () => {
+    assert.match(
+      announcementText({ ...base, guests: ["Jack", "Lottie"] }),
+      /8 of us, including Jack's and Lottie's guests/,
+    );
   });
 
   it("says a single guest in the singular", () => {
-    assert.match(announcementText({ ...base, plusOnes: 1 }), /7 of us, including 1 guest/);
+    assert.match(announcementText({ ...base, guests: ["Lottie"] }), /7 of us, including Lottie's guest/);
+    assert.equal(guestsPhrase(["Ada", "Bo", "Cy"]), "Ada's, Bo's and Cy's guests");
+  });
+
+  it("hands the booking to whoever picked the place, until it is booked", () => {
+    assert.match(announcementText({ ...base, pickedBy: "Lottie" }), /Lottie's booking it\.$/);
+    assert.match(
+      announcementText({ ...base, pickedBy: "Lottie", bookedBy: "Jada" }),
+      /Booked by Jada\.$/,
+    );
+    assert.equal(bookingLine({}), "Still needs booking.");
   });
 
   it("explains an empty tier rather than naming no restaurant", () => {
@@ -267,7 +281,21 @@ describe("message wording", () => {
     announcement: "October: Mangal 2 — Friday 16 October. 6 of us. Still needs booking.",
     inTier: 1,
     tierLabel: "cheap",
+    chosenDate: "2026-10-16",
+    pickedBy: "Lottie",
+    booked: false,
   };
+
+  it("chases whoever picked the place to book it", () => {
+    const copy = copyFor("book-nudge", facts);
+    assert.match(copy.title, /Mangal 2 isn't booked yet/);
+    assert.match(copy.body, /yours to book for Fri 16 Oct/);
+  });
+
+  it("reminds the table a week out, and says if it is still unbooked", () => {
+    assert.match(copyFor("week-before", facts).body, /Still not booked\.$/);
+    assert.doesNotMatch(copyFor("week-before", { ...facts, booked: true }).body, /not booked/);
+  });
 
   it("tells the group a month has opened, without saying how", () => {
     const copy = copyFor("opened", facts);
@@ -301,7 +329,7 @@ describe("message wording", () => {
   });
 
   it("does not print null when nothing was drawn", () => {
-    for (const kind of ["day-before", "rate"] as const) {
+    for (const kind of ["day-before", "week-before", "book-nudge", "rate"] as const) {
       const copy = copyFor(kind, { ...facts, place: null });
       assert.doesNotMatch(`${copy.title} ${copy.body}`, /null|undefined/);
     }
@@ -398,12 +426,26 @@ describe("dinner party wording", () => {
       area: null,
       tier: "low",
       going: 5,
-      plusOnes: 1,
+      guests: ["Sienna"],
       tickets: 0,
     });
     assert.equal(
       text,
-      "December: dinner party — Friday 11 December. 6 of us. Someone needs to host.",
+      "December: dinner party — Friday 11 December. 6 of us, including Sienna's guest. Someone needs to host.",
     );
+  });
+});
+
+describe("the table", () => {
+  it("only counts a guest whose host is going", () => {
+    assert.deepEqual(guestsGoing(["Ada", "Bo"], ["Bo", "Cy"]), ["Bo"]);
+    assert.equal(headcount(["Ada", "Bo"], ["Bo", "Cy"]), 3);
+    assert.equal(headcount([], ["Bo"]), 0);
+  });
+
+  it("knows whether a booking still fits", () => {
+    assert.equal(bookingFits(null, 8), true);
+    assert.equal(bookingFits(7, 7), true);
+    assert.equal(bookingFits(7, 8), false);
   });
 });

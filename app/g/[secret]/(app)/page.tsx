@@ -3,32 +3,41 @@ import { asc, isNull } from "drizzle-orm";
 import Link from "next/link";
 
 import { FinishSetup } from "@/components/finish-setup";
-import { monthName } from "@/lib/cycle/announcement";
+import { monthName, shortDate } from "@/lib/cycle/announcement";
+import { todayInLondon } from "@/lib/cycle/dates";
 import {
+  announcedOuting,
   didAttend,
-  latestSettledOuting,
+  latestDoneOuting,
   loadMonthView,
   loadReveal,
   myRating,
   openOuting,
 } from "@/lib/cycle/month-view";
-import { todayInLondon } from "@/lib/cycle/dates";
 import { isSettled, loadVote, rotaFor, voteMonthFor } from "@/lib/cycle/vote";
 import { getDb } from "@/lib/db";
 import { members } from "@/lib/db/schema";
-import { currentAdmin, currentMember } from "@/lib/identity/guard";
+import { currentMember } from "@/lib/identity/guard";
 
 import { claimNameForm } from "./actions";
 import { Calendar } from "./calendar";
+import { Eyebrow } from "./frame";
+import { InTheRunning } from "./in-the-running";
+import styles from "./page.module.css";
 import { Rate } from "./rate";
 import { Reveal } from "./reveal";
-import { Eyebrow } from "./frame";
-import styles from "./page.module.css";
 import { Vote } from "./vote";
-import { InTheRunning } from "./in-the-running";
 
 const TIER_LABEL = { low: "Low", medium: "Medium", high: "High" } as const;
 
+/**
+ * The month screen, top to bottom: the dinner that is settled and still ahead,
+ * the month that is taking dates, the last dinner if it wants rating, the vote.
+ *
+ * The first two overlap for most of every month — the next month opens on the
+ * 1st and the dinner is usually mid-month — so they are both here, in that
+ * order, rather than one hiding the other.
+ */
 export default async function GroupHome({
   params,
 }: {
@@ -39,99 +48,116 @@ export default async function GroupHome({
 
   if (!member) return <PickYourName secret={secret} />;
 
-  const outing = await openOuting();
-  const vote = await loadVoteBlock(member.id);
+  const [open, announced, done, vote] = await Promise.all([
+    openOuting(),
+    announcedOuting(),
+    latestDoneOuting(),
+    loadVoteBlock(member.id),
+  ]);
 
-  // Nothing taking Availability: show the month that has already been settled,
-  // which is what people open the app for between the 15th and the dinner.
-  if (!outing) {
-    const settled = await latestSettledOuting();
-    if (!settled) return <BetweenMonths />;
+  const eyebrow = open
+    ? open.kind === "party"
+      ? `${monthName(open.month)}: dinner party`
+      : `${monthName(open.month)}: ${TIER_LABEL[open.tier].toLowerCase()}`
+    : announced
+      ? announced.kind === "party"
+        ? "Dinner party"
+        : `${TIER_LABEL[announced.tier]} month`
+      : "";
 
-    const reveal = await loadReveal(settled);
-    const admin = await currentAdmin();
-
-    // The morning after: whoever went is asked how it was, once.
-    const rateLabel =
-      reveal.kind === "party" ? "the dinner party" : reveal.place;
-    const askForRating =
-      settled.status === "done" &&
-      rateLabel !== null &&
-      (await didAttend(settled.id, member.id));
-    const existing = askForRating
-      ? await myRating(settled.id, member.id)
+  // The last dinner is asked about until it has been rated, for a few weeks.
+  const askAbout =
+    done && done.chosenDate && daysAgo(done.chosenDate) <= 21 && (await didAttend(done.id, member.id))
+      ? done
       : null;
+  const existing = askAbout ? await myRating(askAbout.id, member.id) : null;
+  const showRate = askAbout && (!existing || (!open && !announced));
 
-    return (
-      <>
-        <Eyebrow
-          text={
-            settled.kind === "party"
-              ? "Dinner party"
-              : `${TIER_LABEL[settled.tier]} month`
-          }
-        />
-        {/* No heading: the ticket carries the month, and printing it twice above
-            its own stamp is the sort of thing that makes a screen feel generated. */}
-        <Reveal data={reveal} outingId={settled.id} isAdmin={Boolean(admin)} />
-        {askForRating && rateLabel ? (
-          <Rate
-            secret={secret}
-            outingId={settled.id}
-            place={rateLabel}
-            existing={existing}
-          />
-        ) : null}
-        {vote ? <Vote secret={secret} view={vote} me={member.name} /> : null}
-        <FinishSetup secret={secret} />
-      </>
-    );
-  }
-
-  const view = await loadMonthView(outing, member.id);
+  const view = open ? await loadMonthView(open, member.id) : null;
 
   return (
     <>
-      <Eyebrow
-        text={
-          view.kind === "party" ? "Dinner party" : `${TIER_LABEL[view.tier]} month`
-        }
-      />
-      <h1 className={styles.title}>{monthName(view.month)}</h1>
-      <p className={styles.lede}>
-        Tap every evening you could make. Closes {readableDay(view.closeDay)}.
-      </p>
+      {eyebrow ? <Eyebrow text={eyebrow} /> : null}
 
-      <Calendar
-        secret={secret}
-        cells={view.cells}
-        mine={[...view.mine]}
-        freeByDay={Object.fromEntries(view.freeByDay)}
-        memberCount={view.memberCount}
-        myPlusOne={view.myPlusOne}
-        locked={false}
-      />
+      {announced ? (
+        <Reveal
+          data={await loadReveal(announced, member.id)}
+          secret={secret}
+          isAdmin={member.isAdmin}
+        />
+      ) : null}
 
-      <p className={styles.standing}>{standing(view)}</p>
+      {open && view ? (
+        <section className={announced ? styles.nextMonth : undefined}>
+          <h1 className={announced ? styles.subtitle : styles.title}>
+            {monthName(view.month)}
+          </h1>
+          <p className={styles.lede}>
+            Tap every evening you could make. Closes {shortDate(view.closeDay)}.
+          </p>
 
-      <InTheRunning
-        leaders={view.leaders}
-        whoByDay={view.whoByDay}
-        answered={view.answeredNames}
-        silent={view.silentNames}
-        memberCount={view.memberCount}
-      />
+          <Calendar
+            secret={secret}
+            cells={view.cells}
+            mine={[...view.mine]}
+            freeByDay={Object.fromEntries(view.freeByDay)}
+            memberCount={view.memberCount}
+            myPlusOne={view.myPlusOne}
+            locked={false}
+          />
 
-      <p className={styles.aside}>
-        Know your dates further out?{" "}
-        <Link href={`/g/${secret}/settings`}>Fill in the year</Link> and they will
-        be in before each month opens.
-      </p>
+          <p className={styles.standing}>{standing(view)}</p>
+
+          <InTheRunning
+            leaders={view.leaders}
+            whoByDay={view.whoByDay}
+            answered={view.answeredNames}
+            silent={view.silentNames}
+            memberCount={view.memberCount}
+          />
+
+          <p className={styles.aside}>
+            Know your dates further out?{" "}
+            <Link href={`/g/${secret}/settings`}>Fill in the year</Link>.
+          </p>
+        </section>
+      ) : null}
+
+      {!open && !announced && done ? (
+        <Reveal
+          data={await loadReveal(done, member.id)}
+          secret={secret}
+          isAdmin={member.isAdmin}
+        />
+      ) : null}
+
+      {showRate && askAbout ? (
+        <Rate
+          secret={secret}
+          outingId={askAbout.id}
+          place={await placeLabel(askAbout)}
+          existing={existing}
+        />
+      ) : null}
+
+      {!open && !announced && !done ? <BetweenMonths /> : null}
 
       {vote ? <Vote secret={secret} view={vote} me={member.name} /> : null}
       <FinishSetup secret={secret} />
     </>
   );
+}
+
+async function placeLabel(outing: NonNullable<Awaited<ReturnType<typeof latestDoneOuting>>>) {
+  if (outing.kind === "party") return "the dinner party";
+  const reveal = await loadReveal(outing, "");
+  return reveal.place ?? monthName(outing.month);
+}
+
+function daysAgo(day: string): number {
+  const then = new Date(`${day}T00:00:00Z`).getTime();
+  const now = new Date(`${todayInLondon()}T00:00:00Z`).getTime();
+  return Math.round((now - then) / 86_400_000);
 }
 
 /**
@@ -159,18 +185,9 @@ function standing(view: Awaited<ReturnType<typeof loadMonthView>>): string {
 
   if (!leader) return `Nobody has picked an evening yet. ${waiting}`;
 
-  return `${readableDay(leader.day)} leads with ${leader.count} of ${
+  return `${shortDate(leader.day)} leads with ${leader.count} of ${
     view.memberCount
   }. ${waiting}`;
-}
-
-function readableDay(day: string): string {
-  return new Date(`${day}T00:00:00Z`).toLocaleDateString("en-GB", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    timeZone: "UTC",
-  });
 }
 
 function BetweenMonths() {
@@ -200,19 +217,21 @@ async function PickYourName({ secret }: { secret: string }) {
           the names first.
         </p>
       ) : (
-        roster.map((person) => (
-          <form action={claimNameForm} key={person.id}>
-            <input type="hidden" name="secret" value={secret} />
-            <input type="hidden" name="memberId" value={person.id} />
-            <button type="submit" className={styles.stub}>
-              {person.name}
-            </button>
-          </form>
-        ))
+        <div className={styles.stubs}>
+          {roster.map((person) => (
+            <form action={claimNameForm} key={person.id}>
+              <input type="hidden" name="secret" value={secret} />
+              <input type="hidden" name="memberId" value={person.id} />
+              <button type="submit" className={styles.stub}>
+                {person.name}
+              </button>
+            </form>
+          ))}
+        </div>
       )}
       <p className={styles.note}>
-        Tap your name once and this phone will remember it. If you add Reso to your
-        Home Screen afterwards, tap it once more inside the app.
+        This phone will remember you. If you add Reso to your Home Screen later,
+        tap your name once more inside it.
       </p>
     </>
   );

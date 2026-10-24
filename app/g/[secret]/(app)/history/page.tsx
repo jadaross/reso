@@ -6,10 +6,17 @@ import { currentMember } from "@/lib/identity/guard";
 
 import { Eyebrow } from "../frame";
 import styles from "../page.module.css";
+import { Rate } from "../rate";
 import rows from "./history.module.css";
 
 const TIER_LABEL = { low: "Low", medium: "Medium", high: "High" } as const;
 
+/**
+ * Everywhere the Group has been, newest first — and, for anyone who was there,
+ * the stars right on the row. The rating used to live only on the month screen
+ * the morning after, which the next month's calendar had usually pushed off by
+ * then; here it stays until it is given.
+ */
 export default async function History({
   params,
 }: {
@@ -32,53 +39,71 @@ export default async function History({
         </p>
       ) : null}
 
-      {visits.map((visit) => (
-        <article key={visit.outingId} className={rows.visit}>
-          <div className={rows.head}>
-            <div>
-              <h2 className={rows.place}>
-                {visit.place ??
-                  (visit.kind === "party" ? "Dinner party" : "No restaurant drawn")}
-              </h2>
-              <p className={rows.when}>
-                {visit.chosenDate
-                  ? readableDate(visit.chosenDate)
-                  : monthName(visit.month)}
-                {" · "}
-                {visit.went} {visit.went === 1 ? "person" : "people"}
-                {" · "}
-                {TIER_LABEL[visit.tier]}
-              </p>
-            </div>
-            <div className={rows.score}>
-              {visit.averageScore === null ? (
-                <span className={rows.unrated}>unrated</span>
-              ) : (
-                <>
-                  <strong>{visit.averageScore.toFixed(1)}</strong>
-                  <span>
-                    from {visit.ratingCount}{" "}
-                    {visit.ratingCount === 1 ? "person" : "people"}
-                  </span>
-                </>
-              )}
-            </div>
-          </div>
+      {visits.map((visit) => {
+        const went = visit.attendees.includes(member.id);
+        const mine = visit.ratings.find((row) => row.memberId === member.id) ?? null;
+        const label =
+          visit.place ?? (visit.kind === "party" ? "the dinner party" : monthName(visit.month));
 
-          {visit.notes.length > 0 ? (
-            <ul className={rows.notes}>
-              {visit.notes.map((note) => (
-                <li key={note.who}>
-                  <span className={rows.noteWho}>
-                    {note.who} &middot; {note.score}/5
-                  </span>
-                  {note.note}
-                </li>
-              ))}
-            </ul>
-          ) : null}
-        </article>
-      ))}
+        return (
+          <article key={visit.outingId} className={rows.visit}>
+            <div className={rows.head}>
+              <div>
+                <h2 className={rows.place}>
+                  {visit.place ??
+                    (visit.kind === "party" ? "Dinner party" : "No restaurant drawn")}
+                </h2>
+                <p className={rows.when}>
+                  {visit.chosenDate
+                    ? readableDate(visit.chosenDate)
+                    : monthName(visit.month)}
+                  {" · "}
+                  {visit.went} {visit.went === 1 ? "person" : "people"}
+                  {" · "}
+                  {TIER_LABEL[visit.tier]}
+                  {visit.pickedBy ? ` · ${visit.pickedBy}’s pick` : ""}
+                </p>
+              </div>
+              <div className={rows.score}>
+                {visit.averageScore === null ? (
+                  <span className={rows.unrated}>unrated</span>
+                ) : (
+                  <>
+                    <strong>{visit.averageScore.toFixed(1)}</strong>
+                    <span>
+                      from {visit.ratingCount}{" "}
+                      {visit.ratingCount === 1 ? "person" : "people"}
+                    </span>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {went ? (
+              <Rate
+                secret={secret}
+                outingId={visit.outingId}
+                place={label}
+                existing={mine ? { score: mine.score, note: mine.note } : null}
+                compact
+              />
+            ) : null}
+
+            {visit.notes.length > 0 ? (
+              <ul className={rows.notes}>
+                {visit.notes.map((note) => (
+                  <li key={note.who}>
+                    <span className={rows.noteWho}>
+                      {note.who} &middot; {note.score}/5
+                    </span>
+                    {note.note}
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </article>
+        );
+      })}
     </>
   );
 }

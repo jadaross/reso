@@ -177,6 +177,16 @@ export const outings = pgTable("outings", {
     onDelete: "set null",
   }),
   closedAt: timestamp("closed_at", { withTimezone: true }),
+  /**
+   * The table is booked. Whoever booked it taps the ticket; the headcount at that
+   * moment is kept so that a later change to who is coming can be shown against it
+   * ("booked for 7, now 8") rather than silently rewriting the booking.
+   */
+  bookedAt: timestamp("booked_at", { withTimezone: true }),
+  bookedBy: uuid("booked_by").references(() => members.id, {
+    onDelete: "set null",
+  }),
+  bookedFor: integer("booked_for"),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),

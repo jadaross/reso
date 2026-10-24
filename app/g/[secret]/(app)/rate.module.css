@@ -69,3 +69,19 @@
 .error {
   color: var(--amber);
 }
+
+/* On a history row: quieter, inside the row rather than its own card. */
+.compact {
+  border: none;
+  padding: 10px 0 0;
+  margin-top: 0;
+}
+
+.compact .prompt {
+  font-size: var(--step--1);
+  color: var(--muted);
+}
+
+.compact .star {
+  font-size: 24px;
+}

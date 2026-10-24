@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 
+import { monthName } from "@/lib/cycle/announcement";
 import type { MonthChoice, PriceTier } from "@/lib/db/schema";
 
 import {
@@ -18,6 +19,19 @@ import {
 } from "./admin-actions";
 import styles from "./admin.module.css";
 
+export type PanelOuting = {
+  id: string;
+  month: string;
+  tier: PriceTier;
+  kind: "restaurant" | "party";
+  status: "open" | "announced" | "done";
+  chosenDate: string | null;
+  booked: boolean;
+  rerolled: boolean;
+  topDays: { day: string; count: number; label: string }[];
+  emptyTier: boolean;
+};
+
 export type PanelProps = {
   secret: string;
   people: {
@@ -26,20 +40,13 @@ export type PanelProps = {
     isAdmin: boolean;
     firstClaimedAt: Date | null;
   }[];
-  outing: {
-    id: string;
-    month: string;
-    tier: PriceTier;
-    kind: "restaurant" | "party";
-    status: "open" | "announced" | "done";
-    chosenDate: string | null;
-    rerolled: boolean;
-  } | null;
-  topDays: { day: string; count: number; label: string }[];
-  emptyTier: boolean;
+  /** The settled dinner first, then the open month. */
+  outings: PanelOuting[];
 };
 
-export function Panel({ secret, people, outing, topDays, emptyTier }: PanelProps) {
+const STATUS_WORD = { open: "open", announced: "settled", done: "done" } as const;
+
+export function Panel({ secret, people, outings }: PanelProps) {
   const [note, setNote] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -107,15 +114,18 @@ export function Panel({ secret, people, outing, topDays, emptyTier }: PanelProps
           ))}
         </ul>
         <p className={styles.hint}>
-          Removing someone keeps their restaurants and their past dinners. They just
-          stop counting toward dates.
+          Removing someone keeps their restaurants and past dinners.
         </p>
       </section>
 
-      {outing ? (
-        <section className={styles.section}>
-          <h2 className={styles.heading}>This month</h2>
-
+      {outings.map((outing) => {
+        const { topDays, emptyTier } = outing;
+        return (
+        <section key={outing.id} className={styles.section}>
+          <h2 className={styles.heading}>
+            {monthName(outing.month)}{" "}
+            <em className={styles.status}>{STATUS_WORD[outing.status]}</em>
+          </h2>
           <div className={styles.control}>
             <span className={styles.label}>Kind of month</span>
             <div className={styles.choices}>
@@ -201,15 +211,20 @@ export function Panel({ secret, people, outing, topDays, emptyTier }: PanelProps
                 Already redrawn once this month.
               </span>
             ) : null}
+            {outing.status === "announced" && outing.kind !== "party" ? (
+              <span className={styles.hint}>
+                {outing.booked ? "Table booked." : "Table not booked yet."}
+              </span>
+            ) : null}
           </div>
         </section>
-      ) : null}
+        );
+      })}
 
       <section className={styles.section}>
         <h2 className={styles.heading}>Tell everyone</h2>
         <p className={styles.hint}>
-          A one-off note to every phone with notifications on. It goes the moment
-          you tap Send, so read it back first.
+          A one-off note to every phone with notifications on. Goes the moment you tap Send.
         </p>
         <form
           className={styles.addRow}
@@ -221,7 +236,7 @@ export function Panel({ secret, people, outing, topDays, emptyTier }: PanelProps
           <input
             name="text"
             className={styles.field}
-            defaultValue="Updates pushed to the app: fill in your year under Settings, see who's free on the new Free tab, and vote on what kind of month November should be."
+            placeholder="Bring cash, the card machine is broken"
             maxLength={200}
             autoComplete="off"
           />
@@ -233,10 +248,7 @@ export function Panel({ secret, people, outing, topDays, emptyTier }: PanelProps
 
       <section className={styles.section}>
         <h2 className={styles.heading}>Notifications</h2>
-        <p className={styles.hint}>
-          Goes to your phones only, so you can check they arrive without waking
-          anyone else.
-        </p>
+        <p className={styles.hint}>Goes to your phones only.</p>
         <div className={styles.buttons}>
           <button
             type="button"
@@ -251,8 +263,8 @@ export function Panel({ secret, people, outing, topDays, emptyTier }: PanelProps
       <section className={styles.section}>
         <h2 className={styles.heading}>The link</h2>
         <p className={styles.hint}>
-          Rotating it shuts out anyone who hasn&rsquo;t opened Reso yet. Everyone
-          already signed in on their phone stays signed in.
+          Shuts out anyone who hasn&rsquo;t opened Reso yet. Phones already signed
+          in stay signed in.
         </p>
         <button
           type="button"

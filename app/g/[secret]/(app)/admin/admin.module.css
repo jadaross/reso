@@ -184,3 +184,13 @@
   color: var(--amber);
   margin: 0 0 14px;
 }
+
+.status {
+  font-family: var(--font-inter-tight), sans-serif;
+  font-style: normal;
+  font-weight: 400;
+  font-size: var(--step--1);
+  color: var(--amber);
+  letter-spacing: 0;
+  margin-left: 6px;
+}

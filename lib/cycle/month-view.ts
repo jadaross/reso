@@ -12,6 +12,7 @@ import {
   ratings,
 } from "@/lib/db/schema";
 
+import { guestsGoing } from "./booking";
 import { computeChosenDate, type DayTally } from "./chosen-date";
 import {
   calendarGrid,
@@ -154,16 +155,27 @@ export async function openOuting() {
 }
 
 export type Reveal = {
+  outingId: string;
   kind: "restaurant" | "party";
+  status: "open" | "announced" | "done";
   place: string | null;
   area: string | null;
   address: string | null;
+  /** Who added the drawn place — booking it is their job. */
+  pickedBy: string | null;
   chosenDate: DayString | null;
   tier: "low" | "medium" | "high";
   month: string;
-  /** Everyone going, from Availability on the Chosen Date. */
+  /** Everyone going, by name. From `attendance`, which is fixed at Close Day and edited after. */
   going: string[];
-  plusOnes: number;
+  /** The Members bringing a guest who are themselves going, by name. */
+  guests: string[];
+  /** Whether the signed-in Member is going, and bringing someone. */
+  myGoing: boolean;
+  myPlusOne: boolean;
+  /** The booking, once somebody has marked it. */
+  bookedBy: string | null;
+  bookedFor: number | null;
   /** How many tickets the drawn place held — why it won. */
   tickets: number;
   /** How many Picks were in the tier at all. */
@@ -174,32 +186,48 @@ export type Reveal = {
 /** Everything the announced screen shows, in one read. */
 export async function loadReveal(
   outing: typeof outings.$inferSelect,
+  memberId: string,
 ): Promise<Reveal> {
   const db = getDb();
 
-  const [drawn, attending, plusOneRows, drawRows] = await Promise.all([
+  const [drawn, attending, plusOneRows, drawRows, booker] = await Promise.all([
     outing.drawnPickId
       ? db
-          .select({ name: picks.name, address: picks.address, tier: picks.tier })
+          .select({
+            name: picks.name,
+            address: picks.address,
+            tier: picks.tier,
+            pickedBy: members.name,
+            pickedById: members.id,
+          })
           .from(picks)
+          .innerJoin(members, eq(members.id, picks.memberId))
           .where(eq(picks.id, outing.drawnPickId))
           .limit(1)
       : Promise.resolve([]),
     db
-      .select({ name: members.name })
+      .select({ id: members.id, name: members.name })
       .from(attendance)
       .innerJoin(members, eq(members.id, attendance.memberId))
       .where(eq(attendance.outingId, outing.id))
       .orderBy(asc(members.name)),
     db
-      .select({ memberId: plusOnes.memberId })
+      .select({ memberId: plusOnes.memberId, name: members.name })
       .from(plusOnes)
+      .innerJoin(members, eq(members.id, plusOnes.memberId))
       .where(eq(plusOnes.outingId, outing.id)),
     db
       .select({ isReroll: draws.isReroll, candidateCount: draws.candidateCount })
       .from(draws)
       .where(eq(draws.outingId, outing.id))
       .orderBy(asc(draws.drawnAt)),
+    outing.bookedBy
+      ? db
+          .select({ name: members.name })
+          .from(members)
+          .where(eq(members.id, outing.bookedBy))
+          .limit(1)
+      : Promise.resolve([]),
   ]);
 
   const place = drawn[0]?.name ?? null;
@@ -214,20 +242,60 @@ export async function loadReveal(
       ).length
     : 0;
 
+  const going = attending.map((row) => row.name);
+
   return {
+    outingId: outing.id,
     kind: outing.kind,
+    status: outing.status,
     place,
     area: null,
     address: drawn[0]?.address ?? null,
+    pickedBy: drawn[0]?.pickedBy ?? null,
     chosenDate: outing.chosenDate,
     tier: outing.tier,
     month: outing.month,
-    going: attending.map((row) => row.name),
-    plusOnes: plusOneRows.length,
+    going,
+    guests: guestsGoing(
+      going,
+      plusOneRows.map((row) => row.name),
+    ),
+    myGoing: attending.some((row) => row.id === memberId),
+    myPlusOne: plusOneRows.some((row) => row.memberId === memberId),
+    bookedBy: outing.bookedAt ? (booker[0]?.name ?? "someone") : null,
+    bookedFor: outing.bookedAt ? outing.bookedFor : null,
     tickets,
     candidates: drawRows.at(-1)?.candidateCount ?? 0,
     rerolled: drawRows.some((row) => row.isReroll),
   };
+}
+
+/**
+ * The dinner that is settled but has not happened yet, or null.
+ *
+ * This is the thing people open the app for from Close Day until the night
+ * itself — and the next month opens on the 1st, in the middle of that window, so
+ * it has to be found on its own rather than as "whatever is not open".
+ */
+export async function announcedOuting() {
+  const [outing] = await getDb()
+    .select()
+    .from(outings)
+    .where(eq(outings.status, "announced"))
+    .orderBy(asc(outings.month))
+    .limit(1);
+  return outing ?? null;
+}
+
+/** The most recent dinner that has happened, or null. */
+export async function latestDoneOuting() {
+  const [outing] = await getDb()
+    .select()
+    .from(outings)
+    .where(eq(outings.status, "done"))
+    .orderBy(desc(outings.month))
+    .limit(1);
+  return outing ?? null;
 }
 
 /** The Outing being shown when nothing is open: the most recent announced or done. */
@@ -249,9 +317,14 @@ export type VisitRow = {
   place: string | null;
   address: string | null;
   tier: "low" | "medium" | "high";
+  /** Who went, as Member ids, so the screen knows whether the reader can rate it. */
+  attendees: string[];
   went: number;
+  pickedBy: string | null;
   ratingCount: number;
   averageScore: number | null;
+  /** Every rating, so the reader's own can be shown back to them. */
+  ratings: { memberId: string; who: string; score: number; note: string | null }[];
   notes: { who: string; score: number; note: string }[];
 };
 
@@ -277,12 +350,13 @@ export async function loadVisits(): Promise<VisitRow[]> {
 
   const [attendanceRows, ratingRows, drawnPicks] = await Promise.all([
     db
-      .select({ outingId: attendance.outingId })
+      .select({ outingId: attendance.outingId, memberId: attendance.memberId })
       .from(attendance)
       .where(inArray(attendance.outingId, ids)),
     db
       .select({
         outingId: ratings.outingId,
+        memberId: ratings.memberId,
         score: ratings.score,
         note: ratings.note,
         who: members.name,
@@ -291,8 +365,14 @@ export async function loadVisits(): Promise<VisitRow[]> {
       .innerJoin(members, eq(members.id, ratings.memberId))
       .where(inArray(ratings.outingId, ids)),
     db
-      .select({ id: picks.id, name: picks.name, address: picks.address })
-      .from(picks),
+      .select({
+        id: picks.id,
+        name: picks.name,
+        address: picks.address,
+        pickedBy: members.name,
+      })
+      .from(picks)
+      .innerJoin(members, eq(members.id, picks.memberId)),
   ]);
 
   const pickById = new Map(drawnPicks.map((pick) => [pick.id, pick]));
@@ -309,11 +389,21 @@ export async function loadVisits(): Promise<VisitRow[]> {
       place: pick?.name ?? null,
       address: pick?.address ?? null,
       tier: outing.tier,
+      attendees: attendanceRows
+        .filter((row) => row.outingId === outing.id)
+        .map((row) => row.memberId),
       went: attendanceRows.filter((row) => row.outingId === outing.id).length,
+      pickedBy: pick?.pickedBy ?? null,
       ratingCount: mine.length,
       averageScore: mine.length
         ? mine.reduce((total, row) => total + row.score, 0) / mine.length
         : null,
+      ratings: mine.map((row) => ({
+        memberId: row.memberId,
+        who: row.who,
+        score: row.score,
+        note: row.note,
+      })),
       notes: mine
         .filter((row) => row.note)
         .map((row) => ({ who: row.who, score: row.score, note: row.note! })),
