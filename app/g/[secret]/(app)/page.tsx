@@ -90,7 +90,7 @@ export default async function GroupHome({
           secret={secret}
           isAdmin={member.isAdmin}
         />
-      ) : nothingSettled && done && (!askAbout || existing) && !open ? (
+      ) : nothingSettled && done && !open ? (
         <Reveal
           data={await loadReveal(done, member.id)}
           secret={secret}
@@ -98,7 +98,7 @@ export default async function GroupHome({
         />
       ) : null}
 
-      {askAbout && !existing ? (
+      {askAbout ? (
         <Rate
           secret={secret}
           outingId={askAbout.id}

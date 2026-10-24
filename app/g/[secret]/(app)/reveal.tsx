@@ -137,7 +137,7 @@ export function Reveal({
         />
       )}
 
-      {over ? null : <ShareButton text={text} outingId={data.outingId} />}
+      {over || !isAdmin ? null : <ShareButton text={text} outingId={data.outingId} />}
 
       {!over && !party && data.candidates > 0 ? (
         <p className={styles.why}>
@@ -150,7 +150,7 @@ export function Reveal({
         </p>
       ) : null}
 
-      {isAdmin && !over ? <p className={styles.draft}>{text}</p> : null}
+
     </>
   );
 }

@@ -42,7 +42,7 @@ export async function saveDatesAction(
     });
   }
 
-  const result = await saveYear(member.id, clean, todayInLondon());
+  const result = await saveYear(member.id, clean, todayInLondon(), member.name);
 
   if (result.ok) {
     revalidatePath(`/g/${secret}`);

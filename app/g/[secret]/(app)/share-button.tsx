@@ -7,13 +7,16 @@ import { markShared } from "./share-actions";
 import styles from "./reveal.module.css";
 
 /**
- * The whole WhatsApp story, in one button.
+ * The whole WhatsApp story, in one link.
  *
  * Nothing can post to a WhatsApp group from a server — Meta's group API only
  * creates its own small groups for verified businesses, and the unofficial
  * libraries risk the number being banned. See docs/research/reminder-channels.md.
  * So the site writes the message and a human forwards it: Share opens the iOS
- * share sheet, they pick the group, they send. Two taps, no API, no ban risk.
+ * share sheet, they pick the group, they send.
+ *
+ * Quiet, and the Admin's only: the push already tells everyone who has
+ * notifications on, so this is for reaching whoever hasn't.
  */
 export function ShareButton({
   text,
@@ -47,7 +50,7 @@ export function ShareButton({
   return (
     <>
       <button type="button" className={styles.share} onClick={send}>
-        Send it to the group
+        Share to the group chat, for anyone without notifications
       </button>
       {state === "copied" ? (
         <p className={styles.shareNote}>Copied. Paste it into the group chat.</p>

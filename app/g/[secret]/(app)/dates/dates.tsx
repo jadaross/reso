@@ -75,9 +75,7 @@ export function Dates({ secret, me, today, people, free, months, open }: DatesPr
   const inFlight = useRef(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const editable = new Set(
-    months.filter((each) => each.state !== "settled").map((each) => each.month),
-  );
+  const editable = new Set(months.map((each) => each.month));
   const nameOf = new Map(people.map((person) => [person.id, person.name]));
   const order = mode === "who" ? picked : everyone;
 
@@ -134,7 +132,7 @@ export function Dates({ secret, me, today, people, free, months, open }: DatesPr
   }
 
   function toggleWeekday(month: string, weekday: number) {
-    const wanted = daysOnWeekday(month, weekday);
+    const wanted = daysOnWeekday(month, weekday).filter((day) => day >= today);
     set(month, (current) => {
       const all = wanted.every((day) => current.has(day));
       for (const day of wanted) {
@@ -148,14 +146,14 @@ export function Dates({ secret, me, today, people, free, months, open }: DatesPr
   function toggleWeekdayAcrossYear(weekday: number) {
     const targets = [...editable];
     const all = targets.every((month) =>
-      daysOnWeekday(month, weekday).every((day) =>
-        (latest.current[month] ?? []).includes(day),
-      ),
+      daysOnWeekday(month, weekday)
+        .filter((day) => day >= today)
+        .every((day) => (latest.current[month] ?? []).includes(day)),
     );
     const next = { ...latest.current };
     for (const month of targets) {
       const current = new Set(next[month] ?? []);
-      for (const day of daysOnWeekday(month, weekday)) {
+      for (const day of daysOnWeekday(month, weekday).filter((each) => each >= today)) {
         if (all) current.delete(day);
         else current.add(day);
       }
@@ -167,10 +165,8 @@ export function Dates({ secret, me, today, people, free, months, open }: DatesPr
   /** Everyone free on a day, with my own answer taken from the screen, not the server. */
   function freeOn(month: string, day: string): Set<string> {
     const ids = new Set(free[day] ?? []);
-    if (editable.has(month)) {
-      if ((days[month] ?? []).includes(day)) ids.add(me);
-      else ids.delete(me);
-    }
+    if ((days[month] ?? []).includes(day)) ids.add(me);
+    else ids.delete(me);
     return ids;
   }
 
@@ -179,15 +175,13 @@ export function Dates({ secret, me, today, people, free, months, open }: DatesPr
     on:
       editable.size > 0 &&
       [...editable].every((month) =>
-        daysOnWeekday(month, dow.weekday).every((day) =>
-          (days[month] ?? []).includes(day),
-        ),
+        daysOnWeekday(month, dow.weekday)
+          .filter((day) => day >= today)
+          .every((day) => (days[month] ?? []).includes(day)),
       ),
   }));
 
-  // Your own dates start at the first month you can still change; who's free
-  // starts now, because this month's birthday is still worth planning.
-  const shown = mode === "mine" ? months.filter((each) => each.state !== "settled") : months;
+  const shown = months;
   const allPicked = picked.length === everyone.length;
 
   return (
@@ -277,8 +271,9 @@ export function Dates({ secret, me, today, people, free, months, open }: DatesPr
 
       {shown.map((each) => {
         const mine = new Set(days[each.month] ?? []);
-        const locked = mode === "who" || each.state === "settled";
+        const locked = mode === "who";
         const isOpen = open?.month === each.month;
+        const dinner = each.chosenDate;
         const looked = lookedAt && lookedAt.startsWith(each.month.slice(0, 7)) ? lookedAt : null;
 
         return (
@@ -292,15 +287,18 @@ export function Dates({ secret, me, today, people, free, months, open }: DatesPr
                 <span className={styles.tagOpen}>
                   next dinner · closes {shortDate(open.closeDay)}
                 </span>
-              ) : each.state === "settled" ? (
-                <span className={styles.tag}>settled</span>
+              ) : dinner ? (
+                <span className={styles.tag}>
+                  dinner {shortDate(dinner)}
+                  {each.state === "announced" ? " · tap it to say you\u2019re in" : ""}
+                </span>
               ) : null}
             </div>
 
             <div className={styles.grid}>
               {DOW.map((dow, index) => {
-                const wanted = daysOnWeekday(each.month, dow.weekday);
-                const all = wanted.every((day) => mine.has(day));
+                const wanted = daysOnWeekday(each.month, dow.weekday).filter((day) => day >= today);
+                const all = wanted.length > 0 && wanted.every((day) => mine.has(day));
                 return mode === "mine" ? (
                   <button
                     key={index}
@@ -332,6 +330,7 @@ export function Dates({ secret, me, today, people, free, months, open }: DatesPr
                   everyonePicked ? styles.all : "",
                   day === looked ? styles.looked : "",
                   past ? styles.past : "",
+                  day === dinner ? styles.dinner : "",
                 ]
                   .filter(Boolean)
                   .join(" ");
@@ -339,7 +338,7 @@ export function Dates({ secret, me, today, people, free, months, open }: DatesPr
                   <button
                     key={day}
                     type="button"
-                    disabled={mode === "mine" && locked}
+                    disabled={mode === "mine" && (locked || past)}
                     aria-pressed={mode === "mine" ? on : day === looked}
                     aria-label={`${Number(day.slice(8))} ${monthName(each.month)}, ${lit.length} of ${order.length} free`}
                     className={classes}

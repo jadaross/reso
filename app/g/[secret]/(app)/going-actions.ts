@@ -4,17 +4,15 @@ import { and, eq, isNull } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
 import { shortDate } from "@/lib/cycle/announcement";
-import { bookingFits, headcount } from "@/lib/cycle/booking";
+import {
+  currentHeadcount,
+  placeOf,
+  setAttendance,
+  tellBookerIfChanged,
+} from "@/lib/cycle/going";
 import { everyoneIds, pushToMembers } from "@/lib/cycle/messages";
 import { getDb } from "@/lib/db";
-import {
-  attendance,
-  availability,
-  members,
-  outings,
-  picks,
-  plusOnes,
-} from "@/lib/db/schema";
+import { availability, outings, plusOnes } from "@/lib/db/schema";
 import { currentMember } from "@/lib/identity/guard";
 
 export type GoingResult = { ok: true; note?: string } | { ok: false; error: string };
@@ -40,16 +38,9 @@ export async function setGoing(
   if (!outing) return { ok: false, error: "That month can't be changed now." };
 
   const db = getDb();
-  const mine = and(
-    eq(attendance.outingId, outingId),
-    eq(attendance.memberId, member.id),
-  );
+  await setAttendance(outing, member.id, going);
 
   if (going) {
-    await db
-      .insert(attendance)
-      .values({ outingId, memberId: member.id })
-      .onConflictDoNothing();
     if (outing.chosenDate) {
       await db
         .insert(availability)
@@ -57,7 +48,6 @@ export async function setGoing(
         .onConflictDoNothing();
     }
   } else {
-    await db.delete(attendance).where(mine);
     if (outing.chosenDate) {
       await db
         .delete(availability)
@@ -174,57 +164,6 @@ async function settledOuting(outingId: string) {
     .where(and(eq(outings.id, outingId), eq(outings.status, "announced")))
     .limit(1);
   return outing ?? null;
-}
-
-async function currentHeadcount(outingId: string): Promise<number> {
-  const db = getDb();
-  const [going, hosts] = await Promise.all([
-    db
-      .select({ memberId: attendance.memberId })
-      .from(attendance)
-      .innerJoin(members, eq(members.id, attendance.memberId))
-      .where(eq(attendance.outingId, outingId)),
-    db
-      .select({ memberId: plusOnes.memberId })
-      .from(plusOnes)
-      .where(eq(plusOnes.outingId, outingId)),
-  ]);
-  return headcount(
-    going.map((row) => row.memberId),
-    hosts.map((row) => row.memberId),
-  );
-}
-
-async function placeOf(outingId: string): Promise<string | null> {
-  const [row] = await getDb()
-    .select({ name: picks.name })
-    .from(outings)
-    .innerJoin(picks, eq(picks.id, outings.drawnPickId))
-    .where(eq(outings.id, outingId))
-    .limit(1);
-  return row?.name ?? null;
-}
-
-/**
- * If the table is already booked and the headcount has just moved away from
- * what it was booked for, the person who booked it is told at once — they are
- * the one who has to ring the restaurant.
- */
-async function tellBookerIfChanged(
-  outing: typeof outings.$inferSelect,
-  who: string,
-): Promise<void> {
-  if (!outing.bookedAt || !outing.bookedBy || outing.bookedFor === null) return;
-
-  const now = await currentHeadcount(outing.id);
-  if (bookingFits(outing.bookedFor, now)) return;
-
-  const place = await placeOf(outing.id);
-  await pushToMembers([outing.bookedBy], {
-    title: `Now ${now} for ${place ?? "dinner"}`,
-    body: `${who} changed their plans. The table is booked for ${outing.bookedFor}.`,
-    tag: "booking",
-  });
 }
 
 function refresh(secret: string) {

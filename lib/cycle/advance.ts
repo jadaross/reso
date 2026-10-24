@@ -4,16 +4,21 @@ import { getDb } from "@/lib/db";
 import { advanceAvailability, availability, members, outings } from "@/lib/db/schema";
 
 import { addMonths, monthOf, type DayString, type MonthString } from "./dates";
+import { setAttendance, tellBookerIfChanged } from "./going";
 import { daysWithin, monthsShown } from "./year";
 
 export type YearMonth = {
   month: MonthString;
   /**
-   * open    — the Outing is taking Availability now; taps go straight to it.
-   * settled — the Outing has closed; the days are shown but cannot change.
-   * ahead   — no Outing yet; taps are kept as Advance Availability.
+   * open      — the Outing is taking Availability now; taps go straight to it.
+   * announced — the dinner is settled but ahead. Days can still change: the
+   *             dinner date is the going-list, the rest is for other plans.
+   * done      — the dinner has happened. Days still to come can change.
+   * ahead     — no Outing yet; taps are kept as Advance Availability.
    */
-  state: "open" | "settled" | "ahead";
+  state: "open" | "announced" | "done" | "ahead";
+  /** The dinner's date, once there is one. */
+  chosenDate: DayString | null;
   days: DayString[];
 };
 
@@ -28,7 +33,12 @@ export async function loadYear(
   const end = addMonths(months[months.length - 1], 1);
 
   const existing = await db
-    .select({ id: outings.id, month: outings.month, status: outings.status })
+    .select({
+      id: outings.id,
+      month: outings.month,
+      status: outings.status,
+      chosenDate: outings.chosenDate,
+    })
     .from(outings)
     .where(inArray(outings.month, months));
 
@@ -66,7 +76,8 @@ export async function loadYear(
     if (outing) {
       return {
         month,
-        state: outing.status === "open" ? "open" : "settled",
+        state: outing.status,
+        chosenDate: outing.chosenDate,
         days: tapped
           .filter((row) => row.outingId === outing.id)
           .map((row) => row.day)
@@ -76,6 +87,7 @@ export async function loadYear(
     return {
       month,
       state: "ahead",
+      chosenDate: null,
       days: ahead
         .map((row) => row.day)
         .filter((day) => monthOf(day) === month)
@@ -93,14 +105,19 @@ export type SaveYearResult = { ok: true } | { ok: false; error: string };
  *
  * Each month is a whole answer, not a toggle: the screen sends the full set it is
  * showing, so two taps arriving out of order cannot leave a day the Member never
- * chose. Months with an open Outing are written to that Outing's Availability, the
- * same rows the month screen reads; months with no Outing are kept as Advance
- * Availability until theirs opens.
+ * chose. Months with an Outing are written to that Outing's Availability; months
+ * with no Outing are kept as Advance Availability until theirs opens.
+ *
+ * A settled month can still change — Jada: you should be able to fill in the
+ * upcoming month even if the restaurant has been picked. Days already gone stay
+ * as they were. On an announced month, the dinner date is the going-list, so
+ * tapping it is the same as "Count me in" on the ticket, booker's push and all.
  */
 export async function saveYear(
   memberId: string,
   changes: YearChange[],
   today: DayString,
+  memberName = "Someone",
 ): Promise<SaveYearResult> {
   const db = getDb();
   const window = new Set(monthsShown(today));
@@ -112,7 +129,7 @@ export async function saveYear(
   }
 
   const existing = await db
-    .select({ id: outings.id, month: outings.month, status: outings.status })
+    .select()
     .from(outings)
     .where(
       inArray(
@@ -123,19 +140,34 @@ export async function saveYear(
   const outingByMonth = new Map(existing.map((outing) => [outing.month, outing]));
 
   for (const change of changes) {
-    const days = daysWithin(change.month, change.days);
     const outing = outingByMonth.get(change.month);
 
     if (outing) {
-      if (outing.status !== "open") {
-        return { ok: false, error: "That month has already been settled." };
-      }
+      // Only today onwards can change: what someone said about a night that
+      // has passed is part of the record of it.
+      const settled = outing.status !== "open";
+      const days = daysWithin(change.month, change.days).filter(
+        (day) => !settled || day >= today,
+      );
+      const was = settled
+        ? await db
+            .select({ day: availability.day })
+            .from(availability)
+            .where(
+              and(
+                eq(availability.outingId, outing.id),
+                eq(availability.memberId, memberId),
+              ),
+            )
+        : [];
+
       await db
         .delete(availability)
         .where(
           and(
             eq(availability.outingId, outing.id),
             eq(availability.memberId, memberId),
+            ...(settled ? [gte(availability.day, today)] : []),
           ),
         );
       if (days.length > 0) {
@@ -144,8 +176,19 @@ export async function saveYear(
           .values(days.map((day) => ({ outingId: outing.id, memberId, day })))
           .onConflictDoNothing();
       }
+
+      if (outing.status === "announced" && outing.chosenDate && outing.chosenDate >= today) {
+        const before = was.some((row) => row.day === outing.chosenDate);
+        const after = days.includes(outing.chosenDate);
+        if (before !== after) {
+          await setAttendance(outing, memberId, after);
+          await tellBookerIfChanged(outing, memberName);
+        }
+      }
       continue;
     }
+
+    const days = daysWithin(change.month, change.days);
 
     await db
       .delete(advanceAvailability)

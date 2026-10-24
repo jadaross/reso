@@ -104,15 +104,18 @@ a.address {
 }
 
 .share {
+  display: block;
   width: 100%;
-  background: var(--amber);
-  color: var(--bone-ink);
+  background: none;
   border: none;
-  border-radius: var(--radius);
-  padding: 16px;
-  font-size: var(--step-1);
-  font-weight: 600;
-  margin-top: 16px;
+  padding: 10px 0;
+  margin-top: 8px;
+  text-align: left;
+  color: var(--muted);
+  font-size: var(--step--1);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--hairline-strong);
   cursor: pointer;
 }
 

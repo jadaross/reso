@@ -43,7 +43,6 @@ export type MessageKind =
   | "last-call"
   | "closing-soon"
   | "announced"
-  | "admin-nudge"
   | "book-nudge"
   | "week-before"
   | "day-before"
@@ -57,7 +56,6 @@ const CALENDAR: Record<MessageKind, { audience: Audience; tag: string }> = {
   "last-call": { audience: "silent", tag: "month" },
   "closing-soon": { audience: "everyone", tag: "month" },
   announced: { audience: "everyone", tag: "month" },
-  "admin-nudge": { audience: "admins", tag: "admin" },
   "book-nudge": { audience: "picker", tag: "booking" },
   "week-before": { audience: "attending", tag: "dinner" },
   "day-before": { audience: "attending", tag: "dinner" },
@@ -109,11 +107,6 @@ export function copyFor(
       };
     case "announced":
       return { title: `${month} is settled`, body: facts.announcement };
-    case "admin-nudge":
-      return {
-        title: `${month} hasn't been shared`,
-        body: "The group still doesn't know where you're going.",
-      };
     case "book-nudge":
       return {
         title: `${facts.place ?? "The table"} isn't booked yet`,
@@ -403,12 +396,6 @@ export async function sendDueMessages(
     if (outing.status === "announced") {
       due.push("announced");
 
-      // The day after Close Day, if the Admin has not yet forwarded it. The site
-      // cannot see into WhatsApp, so pressing Share is what records "shared".
-      if (today > closeDayFor(outing.month) && !(await hasSent(outing.id, "shared"))) {
-        due.push("admin-nudge");
-      }
-
       // Three days after the draw, the person whose place it is hears that the
       // table is still theirs to book. Once, and only while it is unbooked.
       if (
@@ -444,13 +431,4 @@ function addDays(day: DayString, delta: number): DayString {
   const date = new Date(`${day}T00:00:00Z`);
   date.setUTCDate(date.getUTCDate() + delta);
   return date.toISOString().slice(0, 10);
-}
-
-async function hasSent(outingId: string, kind: string): Promise<boolean> {
-  const [row] = await getDb()
-    .select({ id: sentMessages.id })
-    .from(sentMessages)
-    .where(and(eq(sentMessages.outingId, outingId), eq(sentMessages.kind, kind)))
-    .limit(1);
-  return Boolean(row);
 }
