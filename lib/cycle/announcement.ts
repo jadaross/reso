@@ -60,12 +60,12 @@ export function guestsPhrase(hosts: string[]): string {
   return `${owners.slice(0, -1).join(", ")} and ${last} guests`;
 }
 
-/** "Booked by Jada.", "Lottie's booking it.", or "Still needs booking." */
+/** "Booked by Jada.", "Lottie to book it.", or "Still needs booking." */
 export function bookingLine(
   facts: Pick<AnnouncementFacts, "pickedBy" | "bookedBy">,
 ): string {
   if (facts.bookedBy) return `Booked by ${facts.bookedBy}.`;
-  if (facts.pickedBy) return `${facts.pickedBy}'s booking it.`;
+  if (facts.pickedBy) return `${facts.pickedBy} to book it.`;
   return "Still needs booking.";
 }
 

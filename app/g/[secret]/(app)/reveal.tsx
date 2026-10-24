@@ -106,12 +106,12 @@ export function Reveal({
             </div>
           ) : (
             <div>
-              <span>Booked</span>
+              <span>{data.bookedBy ? "Booked" : "Booking"}</span>
               <strong className={data.bookedBy ? undefined : styles.pendingFact}>
                 {data.bookedBy
                   ? `by ${data.bookedBy}`
                   : data.pickedBy
-                    ? `${data.pickedBy}’s job`
+                    ? `${data.pickedBy}, not yet`
                     : "Not yet"}
               </strong>
             </div>
