@@ -245,3 +245,9 @@ a.address {
   font-size: var(--step--1);
   margin: 8px 0 0;
 }
+
+.toBook {
+  color: var(--amber);
+  margin: 14px 0 0;
+  max-width: var(--measure);
+}

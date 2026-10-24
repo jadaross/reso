@@ -10,6 +10,7 @@ import {
 } from "@/lib/db/schema";
 
 import { seedFromAdvance } from "./advance";
+import { freezeAttendance } from "./attendance";
 import { drawPoolFor } from "./candidates";
 import { computeChosenDate } from "./chosen-date";
 import {
@@ -196,7 +197,13 @@ export async function closeDueOutings(
   return results;
 }
 
-/** An announced Outing whose Chosen Date has passed becomes a Visit. */
+/**
+ * An announced Outing whose Chosen Date has passed becomes a Visit.
+ *
+ * Who went is frozen here, from who was free on the night, so that what the
+ * ticket showed the evening before is what the history records — and so that
+ * later edits to Availability cannot rewrite it.
+ */
 export async function markPastOutingsDone(
   today: DayString = todayInLondon(),
 ): Promise<number> {
@@ -210,7 +217,9 @@ export async function markPastOutingsDone(
         lt(outings.chosenDate, today),
       ),
     )
-    .returning({ id: outings.id });
+    .returning({ id: outings.id, status: outings.status, chosenDate: outings.chosenDate });
+
+  for (const outing of done) await freezeAttendance(outing);
 
   return done.length;
 }

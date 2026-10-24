@@ -113,7 +113,7 @@ export async function markBooked(
   if (!outing) return { ok: false, error: "That month can't be changed now." };
   if (outing.bookedAt) return { ok: true, note: "Already marked as booked." };
 
-  const heads = await currentHeadcount(outingId);
+  const heads = await currentHeadcount(outing);
 
   const claimed = await getDb()
     .update(outings)

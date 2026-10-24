@@ -2,7 +2,6 @@ import { and, eq, inArray, isNull, notInArray, sql } from "drizzle-orm";
 
 import { getDb } from "@/lib/db";
 import {
-  attendance,
   availability,
   groupSecrets,
   members,
@@ -15,6 +14,7 @@ import {
 import { sendToSubscriptions } from "@/lib/push/send";
 
 import { announcementText, monthName, shortDate } from "./announcement";
+import { goingMembers } from "./attendance";
 import { guestsGoing } from "./booking";
 import {
   closeDayFor,
@@ -167,13 +167,14 @@ async function audienceSubscriptions(audience: Audience, outingId: string) {
   }
 
   if (audience === "attending") {
-    const going = db
-      .select({ memberId: attendance.memberId })
-      .from(attendance)
-      .where(eq(attendance.outingId, outingId));
-    return base.where(
-      and(isNull(members.archivedAt), inArray(members.id, going)),
-    );
+    const [outing] = await db
+      .select({ id: outings.id, status: outings.status, chosenDate: outings.chosenDate })
+      .from(outings)
+      .where(eq(outings.id, outingId))
+      .limit(1);
+    const going = outing ? (await goingMembers(outing)).map((row) => row.id) : [];
+    if (going.length === 0) return base.where(eq(members.id, "00000000-0000-0000-0000-000000000000"));
+    return base.where(and(isNull(members.archivedAt), inArray(members.id, going)));
   }
 
   if (audience === "picker") {
@@ -283,11 +284,7 @@ export async function factsFor(
         .selectDistinct({ memberId: availability.memberId })
         .from(availability)
         .where(eq(availability.outingId, outing.id)),
-      db
-        .select({ name: members.name })
-        .from(attendance)
-        .innerJoin(members, eq(members.id, attendance.memberId))
-        .where(eq(attendance.outingId, outing.id)),
+      goingMembers(outing),
       db
         .select({ name: members.name })
         .from(plusOnes)

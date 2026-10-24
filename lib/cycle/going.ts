@@ -1,8 +1,9 @@
 import { and, eq } from "drizzle-orm";
 
 import { getDb } from "@/lib/db";
-import { attendance, members, outings, picks, plusOnes } from "@/lib/db/schema";
+import { attendance, outings, picks, plusOnes } from "@/lib/db/schema";
 
+import { goingMembers } from "./attendance";
 import { bookingFits, headcount } from "./booking";
 import { pushToMembers } from "./messages";
 
@@ -29,21 +30,16 @@ export async function setAttendance(
 }
 
 /** Everyone at the table right now: Members going plus the guests of those Members. */
-export async function currentHeadcount(outingId: string): Promise<number> {
-  const db = getDb();
+export async function currentHeadcount(outing: SettledOuting): Promise<number> {
   const [going, hosts] = await Promise.all([
-    db
-      .select({ memberId: attendance.memberId })
-      .from(attendance)
-      .innerJoin(members, eq(members.id, attendance.memberId))
-      .where(eq(attendance.outingId, outingId)),
-    db
+    goingMembers(outing),
+    getDb()
       .select({ memberId: plusOnes.memberId })
       .from(plusOnes)
-      .where(eq(plusOnes.outingId, outingId)),
+      .where(eq(plusOnes.outingId, outing.id)),
   ]);
   return headcount(
-    going.map((row) => row.memberId),
+    going.map((row) => row.id),
     hosts.map((row) => row.memberId),
   );
 }
@@ -69,7 +65,7 @@ export async function tellBookerIfChanged(
 ): Promise<void> {
   if (!outing.bookedAt || !outing.bookedBy || outing.bookedFor === null) return;
 
-  const now = await currentHeadcount(outing.id);
+  const now = await currentHeadcount(outing);
   if (bookingFits(outing.bookedFor, now)) return;
 
   const place = await placeOf(outing.id);

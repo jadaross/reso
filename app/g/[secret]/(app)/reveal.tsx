@@ -106,18 +106,22 @@ export function Reveal({
             </div>
           ) : (
             <div>
-              <span>{data.bookedBy ? "Booked" : "Booking"}</span>
+              <span>Booked</span>
               <strong className={data.bookedBy ? undefined : styles.pendingFact}>
-                {data.bookedBy
-                  ? `by ${data.bookedBy}`
-                  : data.pickedBy
-                    ? `${data.pickedBy}, not yet`
-                    : "Not yet"}
+                {data.bookedBy ? `Yes, by ${data.bookedBy}` : "No"}
               </strong>
             </div>
           )}
         </div>
       </div>
+
+      {!over && !party && !data.bookedBy ? (
+        <p className={styles.toBook}>
+          {data.pickedBy
+            ? `${data.pickedBy} picked it, so ${data.pickedBy} books it.`
+            : "Someone needs to book it."}
+        </p>
+      ) : null}
 
       <p className={styles.going}>
         {over ? "Went" : "Going"}: {data.going.length > 0 ? data.going.join(", ") : "nobody yet"}

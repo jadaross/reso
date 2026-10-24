@@ -12,6 +12,7 @@ import {
   ratings,
 } from "@/lib/db/schema";
 
+import { goingMembers } from "./attendance";
 import { guestsGoing } from "./booking";
 import { computeChosenDate, type DayTally } from "./chosen-date";
 import {
@@ -209,12 +210,7 @@ export async function loadReveal(
           .where(eq(picks.id, outing.drawnPickId))
           .limit(1)
       : Promise.resolve([]),
-    db
-      .select({ id: members.id, name: members.name })
-      .from(attendance)
-      .innerJoin(members, eq(members.id, attendance.memberId))
-      .where(eq(attendance.outingId, outing.id))
-      .orderBy(asc(members.name)),
+    goingMembers(outing),
     db
       .select({ memberId: plusOnes.memberId, name: members.name })
       .from(plusOnes)
