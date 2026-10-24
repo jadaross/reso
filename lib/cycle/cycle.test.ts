@@ -250,7 +250,7 @@ describe("the announcement", () => {
   });
 
   it("hands the booking to whoever picked the place, until it is booked", () => {
-    assert.match(announcementText({ ...base, pickedBy: "Lottie" }), /Lottie's booking it\.$/);
+    assert.match(announcementText({ ...base, pickedBy: "Lottie" }), /Lottie to book it\.$/);
     assert.match(
       announcementText({ ...base, pickedBy: "Lottie", bookedBy: "Jada" }),
       /Booked by Jada\.$/,
