@@ -48,7 +48,18 @@ export default async function AdminPage({
     if (done) outings.push(done);
   }
 
-  const people = await roster();
+  const everyone = await roster();
+  const people = everyone
+    .filter((person) => person.archivedAt === null)
+    .map(({ id, name, isAdmin, firstClaimedAt }) => ({
+      id,
+      name,
+      isAdmin,
+      firstClaimedAt,
+    }));
+  const archived = everyone
+    .filter((person) => person.archivedAt !== null)
+    .map(({ id, name }) => ({ id, name }));
   const panelOutings = await Promise.all(outings.map(describe));
 
   return (
@@ -58,7 +69,12 @@ export default async function AdminPage({
       <p className={admin.hint}>
         Anyone who taps your name gets this too, so keep the group link to the group.
       </p>
-      <Panel secret={secret} people={people} outings={panelOutings} />
+      <Panel
+        secret={secret}
+        people={people}
+        archived={archived}
+        outings={panelOutings}
+      />
     </>
   );
 }

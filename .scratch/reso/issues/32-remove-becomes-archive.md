@@ -11,10 +11,14 @@ say it.
 
 **Blocked by:** nothing
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] "Remove" is "Archive"; tapping it archives at once and moves the Member to an "Archived" list on the same screen
-- [ ] Each archived Member has "Restore", which brings them back to "Who's in" and to "Who are you?"
-- [ ] Adding a name that matches an archived Member restores them and says so
-- [ ] "Removing someone keeps their restaurants and past dinners." is removed
-- [ ] Archived Members' Picks and Ratings remain, as now
+- [x] "Remove" is "Archive"; tapping it archives at once and moves the Member to an "Archived" list on the same screen
+- [x] Each archived Member has "Restore", which brings them back to "Who's in" and to "Who are you?"
+- [x] Adding a name that matches an archived Member restores them and says so
+- [x] "Removing someone keeps their restaurants and past dinners." is removed
+- [x] Archived Members' Picks and Ratings remain, as now
+
+## Done
+
+Archive and Restore are the words. Tapping Archive moves the Member into a folded Archived list on the same screen. Restore, or typing that name again, puts them back and says "Lottie restored." The sentence under the list is gone. Picks and Ratings stay.

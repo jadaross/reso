@@ -65,7 +65,7 @@ export async function addMember(
       .set({ archivedAt: null })
       .where(eq(members.id, existing.id));
     refresh(secret);
-    return { ok: true, note: `${name} is back in.` };
+    return { ok: true, note: `${name} restored.` };
   }
 
   await db.insert(members).values({ name });
@@ -87,7 +87,7 @@ export async function archiveMember(
 ): Promise<AdminResult> {
   const admin = await requireAdmin();
   if (admin.id === memberId) {
-    return { ok: false, error: "You can't remove yourself." };
+    return { ok: false, error: "You can't archive yourself." };
   }
 
   const db = getDb();
@@ -119,7 +119,34 @@ export async function archiveMember(
     .where(eq(members.id, memberId));
 
   refresh(secret);
-  return { ok: true, note: "Archived. Their picks and past dinners are kept." };
+  return { ok: true, note: "Archived." };
+}
+
+/** Put an archived Member back into the Group. */
+export async function restoreMember(
+  secret: string,
+  memberId: string,
+): Promise<AdminResult> {
+  await requireAdmin();
+
+  const db = getDb();
+  const [member] = await db
+    .select({ name: members.name, archivedAt: members.archivedAt })
+    .from(members)
+    .where(eq(members.id, memberId))
+    .limit(1);
+
+  if (!member?.archivedAt) {
+    return { ok: false, error: "They aren't archived." };
+  }
+
+  await db
+    .update(members)
+    .set({ archivedAt: null })
+    .where(eq(members.id, memberId));
+
+  refresh(secret);
+  return { ok: true, note: `${member.name} restored.` };
 }
 
 /**
@@ -365,9 +392,9 @@ export async function roster() {
       name: members.name,
       isAdmin: members.isAdmin,
       firstClaimedAt: members.firstClaimedAt,
+      archivedAt: members.archivedAt,
     })
     .from(members)
-    .where(isNull(members.archivedAt))
     .orderBy(asc(members.name));
 }
 

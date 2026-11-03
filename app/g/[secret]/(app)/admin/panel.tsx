@@ -8,6 +8,7 @@ import type { MonthChoice, PriceTier } from "@/lib/db/schema";
 import {
   addMember,
   archiveMember,
+  restoreMember,
   closeEarly,
   overrideChosenDate,
   overrideTier,
@@ -42,11 +43,12 @@ export type PanelProps = {
   }[];
   /** The settled dinner first, then the open month. */
   outings: PanelOuting[];
+  archived: { id: string; name: string }[];
 };
 
 const STATUS_WORD = { open: "open", announced: "settled", done: "done" } as const;
 
-export function Panel({ secret, people, outings }: PanelProps) {
+export function Panel({ secret, people, outings, archived }: PanelProps) {
   const [note, setNote] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -107,15 +109,32 @@ export function Panel({ secret, people, outings }: PanelProps) {
                   disabled={pending}
                   onClick={() => run(() => archiveMember(secret, person.id))}
                 >
-                  Remove
+                  Archive
                 </button>
               ) : null}
             </li>
           ))}
         </ul>
-        <p className={styles.hint}>
-          Removing someone keeps their restaurants and past dinners.
-        </p>
+        {archived.length > 0 ? (
+          <details className={styles.archived}>
+            <summary>Archived</summary>
+            <ul className={styles.people}>
+              {archived.map((person) => (
+                <li key={person.id}>
+                  <span>{person.name}</span>
+                  <button
+                    type="button"
+                    className={styles.quiet}
+                    disabled={pending}
+                    onClick={() => run(() => restoreMember(secret, person.id))}
+                  >
+                    Restore
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </details>
+        ) : null}
       </section>
 
       {outings.map((outing) => {
