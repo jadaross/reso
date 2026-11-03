@@ -27,7 +27,7 @@ export type AdminResult = { ok: true; note?: string } | { ok: false; error: stri
 function refresh(secret: string) {
   revalidatePath(`/g/${secret}`);
   revalidatePath(`/g/${secret}/admin`);
-  revalidatePath(`/g/${secret}/restaurants`);
+  revalidatePath(`/g/${secret}/places`);
 }
 
 /**

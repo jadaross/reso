@@ -128,7 +128,7 @@ export default async function GroupHome({
           </Link>
         )}
 
-        <Link href={`/g/${secret}/restaurants`} className={styles.door}>
+        <Link href={`/g/${secret}/places`} className={styles.door}>
           <strong>Add a place</strong>
           <span>
             {placeCounts.length === 0
@@ -139,7 +139,7 @@ export default async function GroupHome({
           </span>
         </Link>
 
-        <Link href={`/g/${secret}/history`} className={styles.door}>
+        <Link href={`/g/${secret}/past`} className={styles.door}>
           <strong>Past dinners</strong>
           <span>
             {dinners[0]?.n

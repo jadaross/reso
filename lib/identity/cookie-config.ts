@@ -3,10 +3,16 @@
  * that `proxy.ts`, which runs before rendering and may be deployed to the edge,
  * can import them.
  */
-import { sign, verify } from "./token";
+import { isGroupSecret, sign, verify } from "./token";
 
 /** Who this Device is. */
 export const MEMBER_COOKIE = "reso_member";
+/**
+ * The Group Link this browser came in through. The not-found page reads it to
+ * offer a way back, and nothing else: a missing page does not inspect the URL,
+ * so a wrong secret and a mistyped path stay indistinguishable.
+ */
+export const GROUP_LINK_COOKIE = "reso_group";
 /**
  * ~400 days. Installed iOS Home Screen web apps are exempt from ITP's website-data
  * removal (WebKit: "Home Screen Web Application Domain Exempt From ITP"), so a
@@ -29,6 +35,24 @@ export const baseCookie = {
 
 export function memberCookieOptions() {
   return { ...baseCookie, maxAge: MEMBER_COOKIE_MAX_AGE };
+}
+
+export function groupLinkCookieOptions() {
+  return { ...baseCookie, maxAge: MEMBER_COOKIE_MAX_AGE };
+}
+
+export type GroupLinkToken = { s: string; iat: number };
+
+export async function signGroupLink(secret: string): Promise<string> {
+  return sign({ s: secret, iat: Date.now() } satisfies GroupLinkToken);
+}
+
+export async function readGroupLinkToken(
+  token: string | undefined,
+): Promise<string | null> {
+  const payload = await verify<GroupLinkToken>(token);
+  if (!payload || typeof payload.s !== "string" || !isGroupSecret(payload.s)) return null;
+  return payload.s;
 }
 
 export async function signMemberToken(memberId: string): Promise<string> {

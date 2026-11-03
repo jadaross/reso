@@ -1,0 +1,28 @@
+.page {
+  min-height: calc(100dvh - env(safe-area-inset-top, 0px));
+  max-width: var(--measure);
+  margin: 0 auto;
+  padding: 40px var(--gutter) calc(40px + env(safe-area-inset-bottom));
+  background: var(--field);
+}
+
+.title {
+  font-size: var(--step-4);
+  margin: 0 0 14px;
+}
+
+.explanation {
+  color: var(--muted);
+  margin: 0;
+}
+
+.back {
+  color: var(--bone);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--hairline-strong);
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}

@@ -66,7 +66,7 @@ export async function addPick(formData: FormData): Promise<AddResult> {
       externalPlaceId: parsed?.externalPlaceId ?? null,
     });
 
-  revalidatePath(`/g/${secret}/restaurants`);
+  revalidatePath(`/g/${secret}/places`);
 
   if (link && !parsed) {
     return { ok: true, note: "We couldn't read that link, so we kept your name." };
@@ -93,7 +93,7 @@ export async function setTier(
   if (!member || !TIERS.includes(tier) || pickIds.length === 0) return;
 
   await getDb().update(picks).set({ tier }).where(inArray(picks.id, pickIds));
-  revalidatePath(`/g/${secret}/restaurants`);
+  revalidatePath(`/g/${secret}/places`);
 }
 
 /** Fill in an address a Google link never carried. Also anyone's to do. */
@@ -110,7 +110,7 @@ export async function setAddress(
     .update(picks)
     .set({ address: trimmed || null })
     .where(inArray(picks.id, pickIds));
-  revalidatePath(`/g/${secret}/restaurants`);
+  revalidatePath(`/g/${secret}/places`);
 }
 
 /**
@@ -159,7 +159,7 @@ export async function retryLink(
     })
     .where(inArray(picks.id, pickIds));
 
-  revalidatePath(`/g/${secret}/restaurants`);
+  revalidatePath(`/g/${secret}/places`);
   return {
     ok: true,
     note: parsed.address ? "Got it." : "Got the place, but no address.",
@@ -202,6 +202,6 @@ export async function removePick(
   }
 
   await db.delete(picks).where(mine);
-  revalidatePath(`/g/${secret}/restaurants`);
+  revalidatePath(`/g/${secret}/places`);
   return { ok: true };
 }

@@ -1,8 +1,10 @@
 import { cookies } from "next/headers";
 
 import {
+  GROUP_LINK_COOKIE,
   MEMBER_COOKIE,
   memberCookieOptions,
+  readGroupLinkToken,
   readMemberToken,
   signMemberToken,
 } from "./cookie-config";
@@ -35,5 +37,8 @@ export async function releaseMember(): Promise<void> {
   (await cookies()).delete(MEMBER_COOKIE);
 }
 
-
-
+/** The Group Link this browser came in through, or null. */
+export async function currentGroupSecret(): Promise<string | null> {
+  const token = (await cookies()).get(GROUP_LINK_COOKIE)?.value;
+  return readGroupLinkToken(token);
+}

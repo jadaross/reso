@@ -97,8 +97,17 @@ export async function verify<T>(token: string | undefined): Promise<T | null> {
  * lookalike characters (no 0/O, 1/l/I). Rejection sampling rather than modulo,
  * so every character is equally likely.
  */
+const GROUP_SECRET_ALPHABET = "23456789abcdefghjkmnpqrstuvwxyz";
+
+export function isGroupSecret(value: string): boolean {
+  return (
+    value.length > 0 &&
+    [...value].every((char) => GROUP_SECRET_ALPHABET.includes(char))
+  );
+}
+
 export function generateGroupSecret(length = 16): string {
-  const alphabet = "23456789abcdefghjkmnpqrstuvwxyz";
+  const alphabet = GROUP_SECRET_ALPHABET;
   const limit = 256 - (256 % alphabet.length);
   let out = "";
   while (out.length < length) {

@@ -52,6 +52,6 @@ export async function rateVisit(
     });
 
   revalidatePath(`/g/${secret}`);
-  revalidatePath(`/g/${secret}/history`);
+  revalidatePath(`/g/${secret}/past`);
   return { ok: true };
 }

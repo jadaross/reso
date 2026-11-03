@@ -15,8 +15,8 @@ import styles from "./shell.module.css";
 const TABS = [
   { path: "", label: "Dinner" },
   { path: "/dates", label: "Dates" },
-  { path: "/restaurants", label: "Places" },
-  { path: "/history", label: "Past" },
+  { path: "/places", label: "Places" },
+  { path: "/past", label: "Past" },
 ] as const;
 
 const SetEyebrow = createContext<(text: string) => void>(() => {});

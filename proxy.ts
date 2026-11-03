@@ -1,22 +1,27 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 import {
+  GROUP_LINK_COOKIE,
+  groupLinkCookieOptions,
   MEMBER_COOKIE,
   memberCookieOptions,
   readMemberToken,
+  signGroupLink,
 } from "@/lib/identity/cookie-config";
+import { checkGroupSecret } from "@/lib/identity/group-link";
+import { groupSecretOnScreen } from "@/lib/identity/not-found";
 
 /**
- * Slides the identity cookie forward on every request.
+ * Slides two cookies forward.
  *
- * This has to happen here rather than in a page: Next.js cannot set cookies during
- * Server Component rendering, only in Server Functions, Route Handlers or here. A
- * Member who opens Reso twice a month should never be asked who they are again, so
- * the ~400-day window is re-issued each time it is used rather than counting down
- * from the day they picked their name.
+ * The identity cookie is re-issued on every request so a Member who opens Reso
+ * twice a month is never asked who they are again. Next.js cannot set cookies
+ * during Server Component rendering, only in a Server Function, a Route Handler,
+ * or here, so the ~400-day window is renewed each time it is used.
  *
- * Deliberately does no database work: whether the Group Link itself is still valid
- * is checked in app/g/[secret]/layout.tsx, where a query is cheap and cached.
+ * The Group Link cookie is set only for a real screen on a live Group Link. A
+ * mistyped path does not qualify, and the not-found page never reads the URL, so
+ * the response cannot be used to tell a wrong secret from a wrong path.
  */
 export async function proxy(request: NextRequest) {
   const response = NextResponse.next();
@@ -24,6 +29,15 @@ export async function proxy(request: NextRequest) {
   const token = request.cookies.get(MEMBER_COOKIE)?.value;
   if (token && (await readMemberToken(token))) {
     response.cookies.set(MEMBER_COOKIE, token, memberCookieOptions());
+  }
+
+  const secret = groupSecretOnScreen(request.nextUrl.pathname);
+  if (secret && (await checkGroupSecret(secret)) === "ok") {
+    response.cookies.set(
+      GROUP_LINK_COOKIE,
+      await signGroupLink(secret),
+      groupLinkCookieOptions(),
+    );
   }
 
   return response;
