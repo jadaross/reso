@@ -146,14 +146,3 @@
   border-color: var(--amber);
 }
 
-.footer {
-  margin: 28px 0 0;
-  font-size: var(--step--1);
-}
-
-.footer a {
-  color: var(--muted);
-  text-decoration: underline;
-  text-underline-offset: 3px;
-  text-decoration-color: var(--hairline-strong);
-}

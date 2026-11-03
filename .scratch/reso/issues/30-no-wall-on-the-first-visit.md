@@ -14,11 +14,11 @@ steps, and works whether or not the banner was dismissed.
 
 **Blocked by:** nothing
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] After "Who are you?" the next screen is Dinner, for new and returning Members alike
-- [ ] The banner is at the top of Dinner in Safari and gone in the installed app (display-mode standalone)
-- [ ] "Show me" opens the three steps as a sheet; "Later" hides the banner for that Device and nothing else
-- [ ] The boxed aside about being asked your name twice is reduced to one line inside the sheet
-- [ ] "Notifications and setup" opens a sheet with: allow notifications (and a "send myself a test"), and the install steps; it never redirects
-- [ ] A direct visit to the old start URL shows the same sheet content rather than bouncing
+- [x] After "Who are you?" the next screen is Dinner, for new and returning Members alike
+- [x] The banner is at the top of Dinner in Safari and gone in the installed app (display-mode standalone)
+- [x] "Show me" opens the three steps as a sheet; "Later" hides the banner for that Device and nothing else
+- [x] The boxed aside about being asked your name twice is reduced to one line inside the sheet
+- [x] "Notifications and setup" opens a sheet with: allow notifications (and a "send myself a test"), and the install steps; it never redirects
+- [x] A direct visit to the old start URL shows the same sheet content rather than bouncing

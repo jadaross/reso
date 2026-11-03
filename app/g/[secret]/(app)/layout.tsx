@@ -11,8 +11,8 @@ import { BareShell, Shell } from "./shell";
  * the whole frame down and put it back, which read as a flicker — and a page the
  * phone had cached from before a deploy could come back wearing an older bar.
  *
- * The route group keeps the setup screen (/start) outside this frame: there is
- * exactly one thing to do there and no tabs to wander off to.
+ * /start stays outside this frame. Picking a name no longer goes there; a direct
+ * visit still shows the notifications and install steps, without the tab bar.
  */
 export default async function AppLayout({
   children,

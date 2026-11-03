@@ -2,7 +2,7 @@ import { asc, count, eq, isNull } from "drizzle-orm";
 
 import Link from "next/link";
 
-import { FinishSetup } from "@/components/finish-setup";
+import { InstallBanner, NotificationsSetup } from "@/components/device-setup";
 import { monthName, shortDate } from "@/lib/cycle/announcement";
 import { addMonths, closeDayFor, todayInLondon } from "@/lib/cycle/dates";
 import {
@@ -81,6 +81,7 @@ export default async function GroupHome({
 
   return (
     <>
+      <InstallBanner />
       {eyebrow ? <Eyebrow text={eyebrow} /> : null}
 
       {announced ? (
@@ -151,10 +152,7 @@ export default async function GroupHome({
 
       {vote ? <Vote secret={secret} view={vote} me={member.name} /> : null}
 
-      <FinishSetup secret={secret} />
-      <p className={styles.footer}>
-        <Link href={`/g/${secret}/start`}>Notifications and setup</Link>
-      </p>
+      <NotificationsSetup secret={secret} />
     </>
   );
 }
