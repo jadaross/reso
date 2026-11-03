@@ -20,7 +20,7 @@ A written v1 spec for Reso — the monthly restaurant-draw site for one London f
 - The human driving this map is Jada (repo owner, sole Admin to start).
 - Implementation has begun ahead of the spec, at Jada's request: the foundation (schema, identity, cycle engine, Maps parsing, PWA/push, daily cron) is built and pushed. Screens are placeholders pending ticket 06 and no message wording exists pending ticket 05. Ticket 07's repo-layout half was decided in code; its spec half is still open. See README.md.
 
-- 2026-11-03: a six-persona usability walkthrough (report: https://claude.ai/artifact/CeK9ShhFPxMHFdYoZ1nPAG) produced build tickets 20–35 in `issues/`. Frontier: 32, 34, 35. Ticket 20 is done: a Price Tier reads £, ££, or £££ on every screen. Ticket 22 is done: the Dinner ticket shows who is going as chips, with Going and Can't make it. Ticket 30 is done.
+- 2026-11-03: a six-persona usability walkthrough (report: https://claude.ai/artifact/CeK9ShhFPxMHFdYoZ1nPAG) produced build tickets 20–35 in `issues/`. Frontier: 32, 35. Ticket 20 is done: a Price Tier reads £, ££, or £££ on every screen. Ticket 22 is done: the Dinner ticket shows who is going as chips, with Going and Can't make it. Ticket 30 is done. Ticket 34 is done: Return saves a Rating's Note, a saved Rating collapses to one line, and only a Member in the Visit's attendance is asked.
 
 ## Decisions so far
 

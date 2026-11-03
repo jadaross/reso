@@ -2,12 +2,14 @@ import { redirect } from "next/navigation";
 
 import { monthName, readableDate } from "@/lib/cycle/announcement";
 import { loadVisits } from "@/lib/cycle/month-view";
+import { shownRatings } from "@/lib/cycle/rating";
 import { formatPriceTier } from "@/lib/cycle/tier";
 import { currentMember } from "@/lib/identity/guard";
 
 import { Eyebrow } from "../frame";
 import styles from "../page.module.css";
 import { Rate } from "../rate";
+import { RatingNames } from "../rating-lines";
 import rows from "./history.module.css";
 
 /**
@@ -41,6 +43,7 @@ export default async function History({
       {visits.map((visit) => {
         const went = visit.attendees.includes(member.id);
         const mine = visit.ratings.find((row) => row.memberId === member.id) ?? null;
+        const shown = shownRatings(visit.ratings);
         const label =
           visit.place ?? (visit.kind === "party" ? "the dinner party" : monthName(visit.month));
 
@@ -64,15 +67,12 @@ export default async function History({
                 </p>
               </div>
               <div className={rows.score}>
-                {visit.averageScore === null ? (
+                {shown.lines.length === 0 || visit.averageScore === null ? (
                   <span className={rows.unrated}>unrated</span>
                 ) : (
                   <>
                     <strong>{visit.averageScore.toFixed(1)}</strong>
-                    <span>
-                      from {visit.ratingCount}{" "}
-                      {visit.ratingCount === 1 ? "person" : "people"}
-                    </span>
+                    <span>from {shown.peopleLabel}</span>
                   </>
                 )}
               </div>
@@ -88,18 +88,7 @@ export default async function History({
               />
             ) : null}
 
-            {visit.notes.length > 0 ? (
-              <ul className={rows.notes}>
-                {visit.notes.map((note) => (
-                  <li key={note.who}>
-                    <span className={rows.noteWho}>
-                      {note.who} &middot; {note.score}/5
-                    </span>
-                    {note.note}
-                  </li>
-                ))}
-              </ul>
-            ) : null}
+            <RatingNames lines={shown.lines} />
           </article>
         );
       })}

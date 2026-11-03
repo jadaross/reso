@@ -12,10 +12,10 @@ notes.
 
 **Blocked by:** nothing
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Return in the note box saves it, the same as tapping Save
-- [ ] "Saved." fades within a couple of seconds and does not show on load
-- [ ] After a rating is saved the card is one line with the stars and the note; tapping it reopens the editor
-- [ ] A Member not in the Visit's attendance sees no stars to tap, on Dinner or Past, and still sees the average, the names and the notes
-- [ ] The Past list shows "N people" matching the number of names shown, counting a rating with no note as a name with no quote
+- [x] Return in the note box saves it, the same as tapping Save
+- [x] "Saved." fades within a couple of seconds and does not show on load
+- [x] After a rating is saved the card is one line with the stars and the note; tapping it reopens the editor
+- [x] A Member not in the Visit's attendance sees no stars to tap, on Dinner or Past, and still sees the average, the names and the notes
+- [x] The Past list shows "N people" matching the number of names shown, counting a rating with no note as a name with no quote

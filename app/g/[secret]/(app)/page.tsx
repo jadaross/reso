@@ -7,11 +7,10 @@ import { monthName, shortDate } from "@/lib/cycle/announcement";
 import { addMonths, closeDayFor, todayInLondon } from "@/lib/cycle/dates";
 import {
   announcedOuting,
-  didAttend,
   latestDoneOuting,
   loadMonthView,
   loadReveal,
-  myRating,
+  loadVisits,
   openOuting,
 } from "@/lib/cycle/month-view";
 import { formatPriceTier } from "@/lib/cycle/tier";
@@ -24,6 +23,7 @@ import { claimNameForm } from "./actions";
 import { Eyebrow } from "./frame";
 import styles from "./page.module.css";
 import { Rate } from "./rate";
+import { VisitScores } from "./rating-lines";
 import { Reveal } from "./reveal";
 import { Vote } from "./vote";
 
@@ -59,14 +59,17 @@ export default async function GroupHome({
       .where(eq(outings.status, "done")),
   ]);
 
-  const view = open ? await loadMonthView(open, member.id) : null;
-
-  // The last dinner is asked about until it has been rated, for a few weeks.
-  const askAbout =
-    done && done.chosenDate && daysAgo(done.chosenDate, today) <= 21 && (await didAttend(done.id, member.id))
-      ? done
-      : null;
-  const existing = askAbout ? await myRating(askAbout.id, member.id) : null;
+  // The last dinner stays on this screen for a few weeks. Anyone can read the
+  // scores; only a Member in the Visit's attendance is asked to rate it.
+  const recentId =
+    done?.chosenDate && daysAgo(done.chosenDate, today) <= 21 ? done.id : null;
+  const [view, visits] = await Promise.all([
+    open ? loadMonthView(open, member.id) : Promise.resolve(null),
+    recentId ? loadVisits() : Promise.resolve(null),
+  ]);
+  const recentVisit = visits?.find((visit) => visit.outingId === recentId) ?? null;
+  const attended = recentVisit?.attendees.includes(member.id) ?? false;
+  const mine = recentVisit?.ratings.find((row) => row.memberId === member.id) ?? null;
   const nothingSettled = !announced;
 
   const eyebrow = announced
@@ -98,13 +101,20 @@ export default async function GroupHome({
         />
       ) : null}
 
-      {askAbout ? (
+      {recentVisit && attended ? (
         <Rate
           secret={secret}
-          outingId={askAbout.id}
-          place={await placeLabel(askAbout)}
-          existing={existing}
+          outingId={recentVisit.outingId}
+          place={
+            recentVisit.place ??
+            (recentVisit.kind === "party" ? "the dinner party" : monthName(recentVisit.month))
+          }
+          existing={mine ? { score: mine.score, note: mine.note } : null}
         />
+      ) : null}
+
+      {recentVisit ? (
+        <VisitScores average={recentVisit.averageScore} ratings={recentVisit.ratings} />
       ) : null}
 
       <nav className={styles.doors} aria-label="What's next">
@@ -144,7 +154,7 @@ export default async function GroupHome({
           <strong>Past dinners</strong>
           <span>
             {dinners[0]?.n
-              ? `${dinners[0].n} so far${askAbout && !existing ? " · one needs your score" : ""}`
+              ? `${dinners[0].n} so far${attended && !mine ? " · one needs your score" : ""}`
               : "None yet"}
           </span>
         </Link>
@@ -155,12 +165,6 @@ export default async function GroupHome({
       <NotificationsSetup secret={secret} />
     </>
   );
-}
-
-async function placeLabel(outing: NonNullable<Awaited<ReturnType<typeof latestDoneOuting>>>) {
-  if (outing.kind === "party") return "the dinner party";
-  const reveal = await loadReveal(outing, "");
-  return reveal.place ?? monthName(outing.month);
 }
 
 function daysAgo(day: string, today: string): number {
