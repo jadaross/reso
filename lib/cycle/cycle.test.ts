@@ -20,7 +20,7 @@ import {
 import { drawFrom, randomIndex } from "./draw";
 import { decideMonth, voteMonthFor } from "./month-choice";
 import { copyFor } from "./messages";
-import { tierForMonth, tierForSequence } from "./tier";
+import { formatPriceTier, tierForMonth, tierForSequence } from "./tier";
 
 describe("dates", () => {
   it("reads today in London, not UTC", () => {
@@ -58,6 +58,14 @@ describe("dates", () => {
     assert.equal(weekdayOf("2026-09-04"), 5); // Friday
     assert.equal(weekdayOf("2026-09-05"), 6); // Saturday
     assert.equal(weekdayOf("2026-09-07"), 1); // Monday
+  });
+});
+
+describe("price tier on screen", () => {
+  it("writes each tier as pound signs, the same way everywhere", () => {
+    assert.equal(formatPriceTier("low"), "£");
+    assert.equal(formatPriceTier("medium"), "££");
+    assert.equal(formatPriceTier("high"), "£££");
   });
 });
 
@@ -260,7 +268,7 @@ describe("the announcement", () => {
 
   it("explains an empty tier rather than naming no restaurant", () => {
     const text = announcementText({ ...base, place: null, area: null });
-    assert.match(text, /nothing in the low list to draw from/);
+    assert.match(text, /nothing in the £ list to draw from/);
     assert.doesNotMatch(text, /null/);
   });
 

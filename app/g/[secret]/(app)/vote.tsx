@@ -3,18 +3,17 @@
 import { useState, useTransition } from "react";
 
 import { monthName, shortDate } from "@/lib/cycle/announcement";
-import { CHOICE_LABEL, CHOICES, type VoteView } from "@/lib/cycle/month-choice";
+import { CHOICES, formatMonthChoice, type VoteView } from "@/lib/cycle/month-choice";
+import { formatPriceTier } from "@/lib/cycle/tier";
 import type { MonthChoice } from "@/lib/db/schema";
 
 import { castVoteAction } from "./vote-actions";
 import styles from "./vote.module.css";
 
-const MARK: Record<MonthChoice, string> = {
-  low: "£",
-  medium: "££",
-  high: "£££",
-  party: "",
-};
+/** A choice in a sentence, where "Dinner party" is not a title. */
+function choiceInSentence(choice: MonthChoice): string {
+  return choice === "party" ? "dinner party" : formatPriceTier(choice);
+}
 
 /**
  * The vote on what kind of month the one after next should be.
@@ -65,10 +64,10 @@ export function Vote({
   const month = monthName(view.month);
   const summary =
     total === 0
-      ? `Nobody has voted. The rota says ${CHOICE_LABEL[view.rota].toLowerCase()}.`
+      ? `Nobody has voted. The rota says ${formatPriceTier(view.rota)}.`
       : leaders.length === 1
-        ? `${CHOICE_LABEL[leaders[0]]} leads, ${top} of ${total}.`
-        : `Tied between ${leaders.map((choice) => CHOICE_LABEL[choice].toLowerCase()).join(" and ")}.`;
+        ? `${formatMonthChoice(leaders[0])} leads, ${top} of ${total}.`
+        : `Tied between ${leaders.map((choice) => choiceInSentence(choice)).join(" and ")}.`;
 
   return (
     <section className={styles.vote} aria-labelledby="month-vote">
@@ -84,7 +83,7 @@ export function Vote({
           </strong>
           <span className={styles.small}>
             {summary} Counted {shortDate(view.countedOn)}.
-            {mine ? ` You: ${CHOICE_LABEL[mine].toLowerCase()}.` : " You haven’t voted."}
+            {mine ? ` You: ${choiceInSentence(mine)}.` : " You haven’t voted."}
           </span>
         </span>
         <span className={styles.chevron} aria-hidden>
@@ -107,8 +106,11 @@ export function Vote({
                   onClick={() => pick(choice)}
                 >
                   <span className={styles.label}>
-                    {MARK[choice] ? <span className={styles.mark}>{MARK[choice]}</span> : null}
-                    {CHOICE_LABEL[choice]}
+                    {choice === "party" ? (
+                      formatMonthChoice(choice)
+                    ) : (
+                      <span className={styles.mark}>{formatPriceTier(choice)}</span>
+                    )}
                   </span>
                   <span className={styles.count}>{names[choice].length}</span>
                 </button>
@@ -120,7 +122,7 @@ export function Vote({
             <dl className={styles.tally}>
               {CHOICES.filter((choice) => names[choice].length > 0).map((choice) => (
                 <div key={choice} className={styles.tallyRow}>
-                  <dt>{CHOICE_LABEL[choice]}</dt>
+                  <dt>{formatMonthChoice(choice)}</dt>
                   <dd>{names[choice].join(", ")}</dd>
                 </div>
               ))}

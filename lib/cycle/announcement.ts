@@ -1,6 +1,7 @@
 import type { PriceTier } from "@/lib/db/schema";
 
 import type { DayString } from "./dates";
+import { formatPriceTier } from "./tier";
 
 export type AnnouncementFacts = {
   month: string;
@@ -38,7 +39,7 @@ export function announcementText(facts: AnnouncementFacts): string {
     return `${month}: dinner party — ${readableDate(facts.chosenDate)}. ${headcountLine(facts)}. Someone needs to host.`;
   }
   if (!facts.place) {
-    return `${month}: ${readableDate(facts.chosenDate)} works for most of us, but there was nothing in the ${facts.tier} list to draw from.`;
+    return `${month}: ${readableDate(facts.chosenDate)} works for most of us, but there was nothing in the ${formatPriceTier(facts.tier)} list to draw from.`;
   }
 
   const head = `${month}: ${facts.place}${facts.area ? `, ${facts.area}` : ""} — ${readableDate(facts.chosenDate)}.`;

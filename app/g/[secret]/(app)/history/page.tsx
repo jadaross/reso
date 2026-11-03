@@ -2,14 +2,13 @@ import { redirect } from "next/navigation";
 
 import { monthName, readableDate } from "@/lib/cycle/announcement";
 import { loadVisits } from "@/lib/cycle/month-view";
+import { formatPriceTier } from "@/lib/cycle/tier";
 import { currentMember } from "@/lib/identity/guard";
 
 import { Eyebrow } from "../frame";
 import styles from "../page.module.css";
 import { Rate } from "../rate";
 import rows from "./history.module.css";
-
-const TIER_LABEL = { low: "Low", medium: "Medium", high: "High" } as const;
 
 /**
  * Everywhere the Group has been, newest first — and, for anyone who was there,
@@ -60,7 +59,7 @@ export default async function History({
                   {" · "}
                   {visit.went} of us{visit.guests > 0 ? ` + ${visit.guests} ${visit.guests === 1 ? "guest" : "guests"}` : ""}
                   {" · "}
-                  {TIER_LABEL[visit.tier]}
+                  {formatPriceTier(visit.tier)}
                   {visit.pickedBy ? ` · ${visit.pickedBy}’s pick` : ""}
                 </p>
               </div>

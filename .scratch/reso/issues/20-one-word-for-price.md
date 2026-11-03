@@ -13,12 +13,12 @@ the same word everywhere.
 
 **Blocked by:** nothing
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] The Dinner header reads "££ month", the ticket stamp reads "££", and Past reads "££" for the tier
-- [ ] The Places counts, the add form's tier picker and the Month Vote all use £ / ££ / £££ as the primary label
-- [ ] The vote's rota line reads "rota says £" (or ££, £££)
-- [ ] The Admin tier override buttons use the same £ glyphs
-- [ ] One helper formats a Price Tier for display, and every screen calls it; no screen spells a tier by hand
-- [ ] "Dinner party" keeps its name; it is a kind of Outing, not a Price Tier
-- [ ] The words Low/Medium/High and Cheap/Middling/Expensive no longer appear as the sole label anywhere on screen
+- [x] The Dinner header reads "££ month", the ticket stamp reads "££", and Past reads "££" for the tier
+- [x] The Places counts, the add form's tier picker and the Month Vote all use £ / ££ / £££ as the primary label
+- [x] The vote's rota line reads "rota says £" (or ££, £££)
+- [x] The Admin tier override buttons use the same £ glyphs
+- [x] One helper formats a Price Tier for display, and every screen calls it; no screen spells a tier by hand
+- [x] "Dinner party" keeps its name; it is a kind of Outing, not a Price Tier
+- [x] The words Low/Medium/High and Cheap/Middling/Expensive no longer appear as the sole label anywhere on screen

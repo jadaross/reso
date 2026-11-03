@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 
 import { monthName } from "@/lib/cycle/announcement";
+import { formatPriceTier } from "@/lib/cycle/tier";
 import type { MonthChoice, PriceTier } from "@/lib/db/schema";
 
 import {
@@ -159,13 +160,7 @@ export function Panel({ secret, people, outings, archived }: PanelProps) {
                     className={choice === current ? styles.chosen : undefined}
                     onClick={() => run(() => overrideTier(secret, outing.id, choice))}
                   >
-                    {choice === "low"
-                      ? "£"
-                      : choice === "medium"
-                        ? "££"
-                        : choice === "high"
-                          ? "£££"
-                          : "Dinner party"}
+                    {choice === "party" ? "Dinner party" : formatPriceTier(choice)}
                   </button>
                 );
               })}

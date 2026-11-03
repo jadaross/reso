@@ -2,12 +2,13 @@
 
 import { useState, useTransition } from "react";
 
+import { formatPriceTier } from "@/lib/cycle/tier";
 import type { PriceTier } from "@/lib/db/schema";
 
 import { removePick, retryLink, setAddress, setTier } from "./pick-actions";
 import styles from "./restaurants.module.css";
 
-const MARK: Record<PriceTier, string> = { low: "£", medium: "££", high: "£££" };
+const TIERS: readonly PriceTier[] = ["low", "medium", "high"];
 
 /**
  * The tier is a control, not a label.
@@ -30,7 +31,7 @@ export function TierControl({
 
   return (
     <label className={styles.price}>
-      <span aria-hidden>{MARK[shown]}</span>
+      <span aria-hidden>{formatPriceTier(shown)}</span>
       <select
         aria-label="Roughly what it costs"
         value={shown}
@@ -41,9 +42,11 @@ export function TierControl({
           startTransition(async () => setTier(secret, pickIds, next));
         }}
       >
-        <option value="low">£ Cheap</option>
-        <option value="medium">££ Middling</option>
-        <option value="high">£££ Expensive</option>
+        {TIERS.map((tier) => (
+          <option key={tier} value={tier}>
+            {formatPriceTier(tier)}
+          </option>
+        ))}
       </select>
     </label>
   );

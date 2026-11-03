@@ -5,6 +5,22 @@ import { addMonths, type MonthString } from "./dates";
 /** Tier Rotation: Low, Medium, High, repeating. */
 export const TIER_ROTATION: readonly PriceTier[] = ["low", "medium", "high"];
 
+/**
+ * The one way a Price Tier is written on screen.
+ *
+ * The pound signs are the label. Screens call this rather than spelling a tier
+ * themselves, so a month, a stamp, a count and a button cannot drift apart.
+ */
+const PRICE_TIER_MARK: Record<PriceTier, string> = {
+  low: "£",
+  medium: "££",
+  high: "£££",
+};
+
+export function formatPriceTier(tier: PriceTier): string {
+  return PRICE_TIER_MARK[tier];
+}
+
 /** The tier for the nth Outing, counting the first Outing ever as 0. */
 export function tierForSequence(sequence: number): PriceTier {
   const index =

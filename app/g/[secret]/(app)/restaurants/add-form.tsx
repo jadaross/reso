@@ -2,14 +2,13 @@
 
 import { useActionState } from "react";
 
+import { formatPriceTier } from "@/lib/cycle/tier";
+import type { PriceTier } from "@/lib/db/schema";
+
 import { addPick, type AddResult } from "./pick-actions";
 import styles from "./restaurants.module.css";
 
-const TIERS = [
-  { value: "low", label: "£", hint: "Cheap" },
-  { value: "medium", label: "££", hint: "Middling" },
-  { value: "high", label: "£££", hint: "Expensive" },
-] as const;
+const TIERS: readonly PriceTier[] = ["low", "medium", "high"];
 
 export function AddForm({ secret }: { secret: string }) {
   const [result, action, pending] = useActionState<AddResult | null, FormData>(
@@ -35,17 +34,14 @@ export function AddForm({ secret }: { secret: string }) {
       />
       <div className={styles.tiers} role="radiogroup" aria-label="Roughly what it costs">
         {TIERS.map((tier, index) => (
-          <label key={tier.value} className={styles.tier}>
+          <label key={tier} className={styles.tier}>
             <input
               type="radio"
               name="tier"
-              value={tier.value}
+              value={tier}
               defaultChecked={index === 0}
             />
-            <span>
-              {tier.label}
-              <small>{tier.hint}</small>
-            </span>
+            <span>{formatPriceTier(tier)}</span>
           </label>
         ))}
       </div>

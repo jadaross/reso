@@ -14,6 +14,7 @@ import {
   myRating,
   openOuting,
 } from "@/lib/cycle/month-view";
+import { formatPriceTier } from "@/lib/cycle/tier";
 import { isSettled, loadVote, rotaFor, voteMonthFor } from "@/lib/cycle/vote";
 import { getDb } from "@/lib/db";
 import { members, outings, picks } from "@/lib/db/schema";
@@ -25,8 +26,6 @@ import styles from "./page.module.css";
 import { Rate } from "./rate";
 import { Reveal } from "./reveal";
 import { Vote } from "./vote";
-
-const TIER_LABEL = { low: "Low", medium: "Medium", high: "High" } as const;
 
 /**
  * The Dinner screen: the ticket, then one card per thing that might want you.
@@ -73,7 +72,7 @@ export default async function GroupHome({
   const eyebrow = announced
     ? announced.kind === "party"
       ? "Dinner party"
-      : `${TIER_LABEL[announced.tier]} month`
+      : `${formatPriceTier(announced.tier)} month`
     : open
       ? `${monthName(open.month)} draws ${shortDate(closeDayFor(open.month))}`
       : "";

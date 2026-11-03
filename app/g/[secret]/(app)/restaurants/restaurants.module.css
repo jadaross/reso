@@ -35,15 +35,10 @@
   text-align: center;
   border: 1px solid var(--hairline-strong);
   border-radius: var(--radius);
-  padding: 10px 4px;
+  padding: 14px 4px;
   cursor: pointer;
   color: var(--muted);
-}
-
-.tier small {
-  display: block;
-  font-size: var(--step--1);
-  margin-top: 2px;
+  letter-spacing: 0.06em;
 }
 
 .tier input:checked + span {

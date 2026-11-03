@@ -7,13 +7,19 @@ import type { MonthChoice, OutingKind, PriceTier } from "@/lib/db/schema";
 
 import { addMonths, monthOf, type DayString, type MonthString } from "./dates";
 import { drawFrom } from "./draw";
+import { formatPriceTier } from "./tier";
 
 export const CHOICES: readonly MonthChoice[] = ["low", "medium", "high", "party"];
 
+/** A Month Vote choice. Price Tiers use the one screen label; a dinner party keeps its name. */
+export function formatMonthChoice(choice: MonthChoice): string {
+  return choice === "party" ? "Dinner party" : formatPriceTier(choice);
+}
+
 export const CHOICE_LABEL: Record<MonthChoice, string> = {
-  low: "Cheap",
-  medium: "Middling",
-  high: "Expensive",
+  low: formatPriceTier("low"),
+  medium: formatPriceTier("medium"),
+  high: formatPriceTier("high"),
   party: "Dinner party",
 };
 

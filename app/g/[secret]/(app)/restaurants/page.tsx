@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { monthName, shortDate } from "@/lib/cycle/announcement";
 import { addMonths, closeDayFor } from "@/lib/cycle/dates";
 import { latestSettledOuting, openOuting } from "@/lib/cycle/month-view";
+import { formatPriceTier } from "@/lib/cycle/tier";
 import { getDb } from "@/lib/db";
 import { members, picks, type PriceTier } from "@/lib/db/schema";
 import { currentAdmin, currentMember } from "@/lib/identity/guard";
@@ -13,12 +14,6 @@ import styles from "../page.module.css";
 import { AddForm } from "./add-form";
 import { AddressControl, RemoveControl, RetryLink, TierControl } from "./row-controls";
 import rows from "./restaurants.module.css";
-
-const TIER_LABEL: Record<PriceTier, string> = {
-  low: "Low",
-  medium: "Medium",
-  high: "High",
-};
 
 export default async function Restaurants({
   params,
@@ -101,7 +96,7 @@ export default async function Restaurants({
               }
             >
               <span className={rows.tallyCount}>{byTier[each]}</span>
-              <span className={rows.tallyLabel}>{TIER_LABEL[each]}</span>
+              <span className={rows.tallyLabel}>{formatPriceTier(each)}</span>
             </div>
           ))}
         </div>
@@ -122,7 +117,7 @@ export default async function Restaurants({
         <>
           <div className={rows.groupHead}>
             Everyone&rsquo;s &mdash; in the draw this month
-            {tier ? ` (${TIER_LABEL[tier]})` : ""}
+            {tier ? ` (${formatPriceTier(tier)})` : ""}
           </div>
           {inDraw.length === 0 ? (
             <p className={rows.empty}>

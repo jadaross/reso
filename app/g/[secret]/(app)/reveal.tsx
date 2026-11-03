@@ -6,12 +6,11 @@ import {
 } from "@/lib/cycle/announcement";
 import { headcount } from "@/lib/cycle/booking";
 import type { Reveal as RevealData } from "@/lib/cycle/month-view";
+import { formatPriceTier } from "@/lib/cycle/tier";
 
 import styles from "./reveal.module.css";
 import { ShareButton } from "./share-button";
 import { TicketControls } from "./ticket-controls";
-
-const TIER_LABEL = { low: "Low", medium: "Medium", high: "High" } as const;
 
 /**
  * The month, once it is settled: the ticket.
@@ -63,7 +62,7 @@ export function Reveal({
       <>
         <div className={styles.empty}>
           <strong>{shortDate(data.chosenDate)} works for most of you.</strong>
-          Nothing was in the {TIER_LABEL[data.tier].toLowerCase()} list to draw
+          Nothing was in the {formatPriceTier(data.tier)} list to draw
           from. Add some places and ask the Admin to draw.
         </div>
         {isAdmin ? <p className={styles.draft}>{text}</p> : null}
@@ -77,7 +76,7 @@ export function Reveal({
     <>
       <div className={styles.ticket}>
         <div className={styles.stamp}>
-          {party ? "DINNER PARTY" : TIER_LABEL[data.tier].toUpperCase()}
+          {party ? "DINNER PARTY" : formatPriceTier(data.tier)}
         </div>
         <div className={styles.month}>{monthName(data.month)}</div>
         <p className={styles.place}>{party ? "At someone’s" : data.place}</p>
