@@ -23,6 +23,18 @@ const names = (value: string | undefined) =>
   (value ?? "").split(",").map((each) => each.trim()).filter(Boolean);
 
 async function main() {
+  const db0 = getDb();
+  if (flag("list")) {
+    const all = await db0
+      .select({ month: outings.month, kind: outings.kind, date: outings.chosenDate, place: picks.name })
+      .from(outings)
+      .leftJoin(picks, eq(picks.id, outings.drawnPickId))
+      .where(eq(outings.status, "done"))
+      .orderBy(outings.month);
+    for (const row of all) console.log(`${row.month}  ${row.date ?? "no date"}  ${row.place ?? row.kind}`);
+    return;
+  }
+
   const place = arg("place");
   if (!place) {
     console.error("Usage: --place <part of the name> [--except A,B | --went A,B] [--no-guests] [--apply]");
