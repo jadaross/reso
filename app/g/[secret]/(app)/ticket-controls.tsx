@@ -1,120 +1,325 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { createContext, useContext, useState, useTransition, type ReactNode } from "react";
 
-import { bookingFits } from "@/lib/cycle/booking";
+import {
+  bookingFits,
+  headcount,
+  memberOnDate,
+  type NightAnswer,
+  type Seat,
+} from "@/lib/cycle/booking";
 
 import { markBooked, setGoing, setPlusOne, unmarkBooked } from "./going-actions";
 import styles from "./reveal.module.css";
 
 /**
- * The three things a person can do to a settled month: say whether they are
- * coming, say whether they are bringing someone, and say the table is booked.
+ * The settled month, as far as a tap can change it: who is coming, whether you
+ * are, whether you are bringing someone, and whether the table is booked.
  *
- * Each tap lands on screen at once and the server catches up behind it; the
- * page re-renders from the server when the action completes, so the headcount
- * on the ticket above follows a beat later.
+ * A tap is drawn at once from the days this Member already marked. The server
+ * writes the same Availability row the calendar uses, then the page catches up.
  */
-export function TicketControls({
+
+type Snapshot = { days: string[]; bringing: boolean };
+
+type NightContext = {
+  seats: Seat[];
+  heads: number;
+  viewerId: string;
+  answer: NightAnswer;
+  plusOne: boolean;
+  pending: boolean;
+  error: string | null;
+  party: boolean;
+  over: boolean;
+  bookedBy: string | null;
+  bookedByMe: boolean;
+  bookedFor: number | null;
+  booked: boolean;
+  go: () => void;
+  cant: () => void;
+  togglePlus: () => void;
+  mark: () => void;
+  unmark: () => void;
+};
+
+const Night = createContext<NightContext | null>(null);
+
+function useNight(): NightContext {
+  const value = useContext(Night);
+  if (!value) throw new Error("Going controls rendered outside their provider");
+  return value;
+}
+
+export function Going({
   secret,
   outingId,
-  party,
-  myGoing,
-  myPlusOne,
+  chosenDate,
+  viewerId,
+  viewerDays,
+  seats,
   bookedBy,
+  bookedByMe,
   bookedFor,
-  heads,
+  party,
+  over,
+  children,
 }: {
   secret: string;
   outingId: string;
-  party: boolean;
-  myGoing: boolean;
-  myPlusOne: boolean;
+  chosenDate: string;
+  viewerId: string;
+  viewerDays: string[];
+  seats: Seat[];
   bookedBy: string | null;
+  bookedByMe: boolean;
   bookedFor: number | null;
-  heads: number;
+  party: boolean;
+  over: boolean;
+  children: ReactNode;
 }) {
-  const [going, setGoingShown] = useState(myGoing);
-  const [plusOne, setPlusOneShown] = useState(myPlusOne);
-  const [booked, setBookedShown] = useState(Boolean(bookedBy));
+  const [days, setDays] = useState(viewerDays);
+  const [bringing, setBringing] = useState(
+    seats.some((seat) => seat.id === viewerId && seat.plusOne),
+  );
+  const [booked, setBooked] = useState(Boolean(bookedBy));
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
-  function run(next: () => Promise<{ ok: boolean; error?: string }>) {
+  // Before the dinner, the chip and the buttons follow the days marked free.
+  // Afterwards the Visit is already frozen, and nothing here can move it.
+  const answer: NightAnswer = over
+    ? (seats.find((seat) => seat.id === viewerId)?.answer ?? "unanswered")
+    : memberOnDate(days, chosenDate);
+  const plusOne = answer === "going" && bringing;
+  const live = over
+    ? seats
+    : seats.map((seat) =>
+        seat.id === viewerId ? { ...seat, answer, plusOne } : seat,
+      );
+  const heads = headcount(
+    live.filter((seat) => seat.answer === "going").map((seat) => seat.id),
+    live.filter((seat) => seat.plusOne).map((seat) => seat.id),
+  );
+
+  function paint(nextDays: string[], nextBringing: boolean) {
+    setDays(nextDays);
+    setBringing(nextBringing);
+  }
+
+  function run(snapshot: Snapshot, action: () => Promise<{ ok: boolean; error?: string }>) {
     startTransition(async () => {
-      const result = await next();
-      setError(result.ok ? null : (result.error ?? "That didn’t save."));
+      const result = await action();
+      if (result.ok) {
+        setError(null);
+        return;
+      }
+      setDays(snapshot.days);
+      setBringing(snapshot.bringing);
+      setError(result.error ?? "That didn’t save.");
     });
   }
 
-  const fits = bookingFits(bookedFor, heads);
+  function go() {
+    if (pending || over || answer === "going") return;
+    const snapshot = { days, bringing };
+    const nextDays = days.includes(chosenDate) ? days : [...days, chosenDate];
+    paint(nextDays, bringing);
+    run(snapshot, () => setGoing(secret, outingId, true));
+  }
+
+  function cant() {
+    if (pending || over || answer === "cant") return;
+    // No Availability at all is "hasn't answered", and neither button is lit.
+    // Tapping Can't make it only means something once there is a night to drop.
+    if (answer === "unanswered" && !bringing) return;
+    const snapshot = { days, bringing };
+    paint(
+      days.filter((day) => day !== chosenDate),
+      false,
+    );
+    run(snapshot, () => setGoing(secret, outingId, false));
+  }
+
+  function togglePlus() {
+    if (pending || over || answer !== "going") return;
+    const snapshot = { days, bringing };
+    const next = !bringing;
+    paint(days, next);
+    run(snapshot, () => setPlusOne(secret, outingId, next));
+  }
+
+  function mark() {
+    if (pending || over) return;
+    setBooked(true);
+    startTransition(async () => {
+      const result = await markBooked(secret, outingId);
+      if (result.ok) setError(null);
+      else {
+        setBooked(false);
+        setError(result.error ?? "That didn’t save.");
+      }
+    });
+  }
+
+  function unmark() {
+    if (pending || over) return;
+    setBooked(false);
+    startTransition(async () => {
+      const result = await unmarkBooked(secret, outingId);
+      if (result.ok) setError(null);
+      else {
+        setBooked(true);
+        setError(result.error ?? "That didn’t save.");
+      }
+    });
+  }
 
   return (
-    <div className={styles.controls}>
-      <div className={styles.toggles}>
-        <button
-          type="button"
-          aria-pressed={going}
-          disabled={pending}
-          className={going ? `${styles.toggle} ${styles.toggleOn}` : styles.toggle}
-          onClick={() => {
-            const next = !going;
-            setGoingShown(next);
-            if (!next) setPlusOneShown(false);
-            run(() => setGoing(secret, outingId, next));
-          }}
-        >
-          {going ? "You’re going" : "Count me in"}
-        </button>
-        {going ? (
-          <button
-            type="button"
-            aria-pressed={plusOne}
-            disabled={pending}
-            className={plusOne ? `${styles.toggle} ${styles.toggleOn}` : styles.toggle}
-            onClick={() => {
-              const next = !plusOne;
-              setPlusOneShown(next);
-              run(() => setPlusOne(secret, outingId, next));
-            }}
-          >
-            {plusOne ? "Bringing someone" : "Bringing someone?"}
-          </button>
-        ) : null}
-      </div>
+    <Night.Provider
+      value={{
+        seats: live,
+        heads,
+        viewerId,
+        answer,
+        plusOne,
+        pending,
+        error,
+        party,
+        over,
+        bookedBy,
+        bookedByMe,
+        bookedFor,
+        booked,
+        go,
+        cant,
+        togglePlus,
+        mark,
+        unmark,
+      }}
+    >
+      {children}
+    </Night.Provider>
+  );
+}
 
-      {party ? null : booked ? (
-        <div className={fits ? styles.bookedNote : `${styles.bookedNote} ${styles.bookedOff}`}>
-          {fits
-            ? `Booked for ${bookedFor ?? heads}.`
-            : `Booked for ${bookedFor}, now ${heads}. ${bookedBy ?? "Whoever booked"} needs to tell them.`}
+/** The headcount on the ticket. Lives here so a tap changes it in the same paint. */
+export function Headcount() {
+  return <>{useNight().heads}</>;
+}
+
+function chipClass(seat: Seat, you: boolean): string {
+  const tone =
+    seat.answer === "going"
+      ? styles.chipGoing
+      : seat.answer === "cant"
+        ? styles.chipCant
+        : styles.chipSilent;
+  return [styles.chip, tone, you ? styles.chipYou : ""].filter(Boolean).join(" ");
+}
+
+function chipLabel(seat: Seat, you: boolean): string {
+  const who = you ? `${seat.name}, you` : seat.name;
+  if (seat.answer === "going") {
+    return seat.plusOne ? `${who}, going, bringing someone` : `${who}, going`;
+  }
+  if (seat.answer === "cant") return `${who}, can’t make it`;
+  return `${who}, hasn’t answered`;
+}
+
+export function GoingPeople() {
+  const night = useNight();
+  const fits = bookingFits(night.bookedFor, night.heads);
+  const tell = night.bookedByMe
+    ? "You need"
+    : `${night.bookedBy ?? "Whoever booked"} needs`;
+
+  return (
+    <>
+      <ul className={styles.chips} aria-label="Who is going">
+        {night.seats.map((seat) => {
+          const you = seat.id === night.viewerId;
+          return (
+            <li key={seat.id} className={chipClass(seat, you)} aria-label={chipLabel(seat, you)}>
+              {seat.name}
+              {seat.plusOne ? <span className={styles.badge}>+1</span> : null}
+            </li>
+          );
+        })}
+      </ul>
+
+      {!night.over && night.answer === "going" ? (
+        <p className={styles.yours}>
+          You’re going
+          <span aria-hidden="true">·</span>
           <button
             type="button"
-            className={styles.quiet}
-            disabled={pending}
-            onClick={() => {
-              setBookedShown(false);
-              run(() => unmarkBooked(secret, outingId));
-            }}
+            aria-pressed={night.plusOne}
+            disabled={night.pending}
+            className={night.plusOne ? `${styles.bring} ${styles.bringOn}` : styles.bring}
+            onClick={night.togglePlus}
           >
-            not booked after all
+            {night.plusOne ? "Bringing someone" : "Bringing someone?"}
           </button>
+        </p>
+      ) : null}
+
+      {night.over ? null : (
+        <div className={styles.controls}>
+          <div className={styles.toggles}>
+            <button
+              type="button"
+              aria-pressed={night.answer === "going"}
+              disabled={night.pending}
+              className={
+                night.answer === "going" ? `${styles.toggle} ${styles.toggleOn}` : styles.toggle
+              }
+              onClick={night.go}
+            >
+              Going
+            </button>
+            <button
+              type="button"
+              aria-pressed={night.answer === "cant"}
+              disabled={night.pending}
+              className={
+                night.answer === "cant" ? `${styles.toggle} ${styles.toggleOn}` : styles.toggle
+              }
+              onClick={night.cant}
+            >
+              Can’t make it
+            </button>
+          </div>
+
+          {night.party ? null : night.booked ? (
+            <div className={fits ? styles.bookedNote : `${styles.bookedNote} ${styles.bookedOff}`}>
+              {fits
+                ? `Booked for ${night.bookedFor ?? night.heads}.`
+                : `Booked for ${night.bookedFor}, now ${night.heads}. ${tell} to tell them.`}
+              <button
+                type="button"
+                className={styles.quiet}
+                disabled={night.pending}
+                onClick={night.unmark}
+              >
+                not booked after all
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              className={styles.book}
+              disabled={night.pending}
+              onClick={night.mark}
+            >
+              I’ve booked it
+            </button>
+          )}
+
+          {night.error ? <p className={styles.error}>{night.error}</p> : null}
         </div>
-      ) : (
-        <button
-          type="button"
-          className={styles.book}
-          disabled={pending}
-          onClick={() => {
-            setBookedShown(true);
-            run(() => markBooked(secret, outingId));
-          }}
-        >
-          I’ve booked it
-        </button>
       )}
-
-      {error ? <p className={styles.error}>{error}</p> : null}
-    </div>
+    </>
   );
 }

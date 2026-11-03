@@ -13,7 +13,7 @@ import {
 } from "@/lib/db/schema";
 
 import { goingMembers } from "./attendance";
-import { guestsGoing } from "./booking";
+import { guestsGoing, memberOnDate, type NightAnswer, type Seat } from "./booking";
 import { computeChosenDate, type DayTally } from "./chosen-date";
 import {
   calendarGrid,
@@ -176,6 +176,17 @@ export type Reveal = {
   /** Whether the signed-in Member is going, and bringing someone. */
   myGoing: boolean;
   myPlusOne: boolean;
+  /** One chip per Member still in the Group. */
+  seats: Seat[];
+  /** The Member looking at the ticket. */
+  viewerId: string;
+  /**
+   * Days this Member marked free this month. The ticket uses them to show a
+   * tap at once, before the server has answered.
+   */
+  viewerDays: string[];
+  /** True when this phone is the one that booked the table. */
+  bookedByMe: boolean;
   /** The booking, once somebody has marked it. */
   bookedBy: string | null;
   bookedFor: number | null;
@@ -193,7 +204,8 @@ export async function loadReveal(
 ): Promise<Reveal> {
   const db = getDb();
 
-  const [drawn, attending, plusOneRows, drawRows, booker] = await Promise.all([
+  const [drawn, attending, plusOneRows, drawRows, booker, roster, dayRows] =
+    await Promise.all([
     outing.drawnPickId
       ? db
           .select({
@@ -228,7 +240,50 @@ export async function loadReveal(
           .where(eq(members.id, outing.bookedBy))
           .limit(1)
       : Promise.resolve([]),
+    db
+      .select({ id: members.id, name: members.name })
+      .from(members)
+      .where(isNull(members.archivedAt))
+      .orderBy(asc(members.name)),
+    db
+      .select({ memberId: availability.memberId, day: availability.day })
+      .from(availability)
+      .where(eq(availability.outingId, outing.id)),
   ]);
+
+  const daysByMember = new Map<string, string[]>();
+  for (const row of dayRows) {
+    const listed = daysByMember.get(row.memberId);
+    if (listed) listed.push(row.day);
+    else daysByMember.set(row.memberId, [row.day]);
+  }
+
+  const goingIds = new Set(attending.map((row) => row.id));
+  const plusIds = new Set(plusOneRows.map((row) => row.memberId));
+  const done = outing.status === "done";
+
+  const seats: Seat[] = roster.map((person) => {
+    const days = daysByMember.get(person.id) ?? [];
+    // After the dinner, who went is the Visit. Before that, going is Availability
+    // on the Chosen Date, so the chips cannot drift from the calendar.
+    const answer: NightAnswer = done
+      ? goingIds.has(person.id)
+        ? "going"
+        : days.length === 0
+          ? "unanswered"
+          : "cant"
+      : outing.chosenDate
+        ? memberOnDate(days, outing.chosenDate)
+        : days.length === 0
+          ? "unanswered"
+          : "cant";
+    return {
+      id: person.id,
+      name: person.name,
+      answer,
+      plusOne: answer === "going" && plusIds.has(person.id),
+    };
+  });
 
   const place = drawn[0]?.name ?? null;
 
@@ -269,6 +324,10 @@ export async function loadReveal(
     ),
     myGoing: attending.some((row) => row.id === memberId),
     myPlusOne: plusOneRows.some((row) => row.memberId === memberId),
+    seats,
+    viewerId: memberId,
+    viewerDays: daysByMember.get(memberId) ?? [],
+    bookedByMe: Boolean(outing.bookedAt && outing.bookedBy === memberId),
     bookedBy: outing.bookedAt ? (booker[0]?.name ?? "someone") : null,
     bookedFor: outing.bookedAt ? outing.bookedFor : null,
     tickets,

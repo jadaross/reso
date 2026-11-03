@@ -19,14 +19,14 @@ Member with no Availability recorded for the month; "can't" is one who answered 
 
 **Blocked by:** nothing
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] The "Going:" sentence is replaced by name chips: filled = going, "+1" badge = bringing a guest, grey = hasn't answered, dashed = can't
-- [ ] The viewer's own chip is visibly marked
-- [ ] "Going" and "Can't make it" are two buttons; the lit one reflects the viewer's current state, and a Member who hasn't answered sees neither lit
-- [ ] Tapping "Can't make it" removes the Chosen Date from the Member's Availability and the chip row, the headcount and "Table for" update at once
-- [ ] Tapping "Going" adds the Chosen Date to their Availability; the plus-one control appears only when going
-- [ ] Toggling going off clears the plus-one, or asks
-- [ ] The ticket reads "Jada's ticket · Jada books" instead of "Picked by Jada" and "Jada picked it, so Jada books it."
-- [ ] The headcount-changed line, where shown, says "you" to the booker on their own phone
-- [ ] `lib/cycle/cycle.test.ts` covers going, can't, and not-answered for one Member
+- [x] The "Going:" sentence is replaced by name chips: filled = going, "+1" badge = bringing a guest, grey = hasn't answered, dashed = can't
+- [x] The viewer's own chip is visibly marked
+- [x] "Going" and "Can't make it" are two buttons; the lit one reflects the viewer's current state, and a Member who hasn't answered sees neither lit
+- [x] Tapping "Can't make it" removes the Chosen Date from the Member's Availability and the chip row, the headcount and "Table for" update at once
+- [x] Tapping "Going" adds the Chosen Date to their Availability; the plus-one control appears only when going
+- [x] Toggling going off clears the plus-one, or asks
+- [x] The ticket reads "Jada's ticket · Jada books" instead of "Picked by Jada" and "Jada picked it, so Jada books it."
+- [x] The headcount-changed line, where shown, says "you" to the booker on their own phone
+- [x] `lib/cycle/cycle.test.ts` covers going, can't, and not-answered for one Member

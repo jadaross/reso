@@ -12,8 +12,8 @@ type SettledOuting = typeof outings.$inferSelect;
 /**
  * Put a Member on, or take them off, a settled month's going-list.
  *
- * Shared by the ticket's "Count me in" and by tapping the dinner date on the
- * Dates tab, so the two can never disagree about what going means.
+ * Shared by the ticket's Going / Can't make it and by tapping the dinner date
+ * on the Dates tab, so the two can never disagree about what going means.
  */
 export async function setAttendance(
   outing: SettledOuting,

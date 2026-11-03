@@ -3,7 +3,7 @@ import { describe, it } from "node:test";
 
 import { daysOnWeekday, daysWithin, monthsAhead, monthsShown } from "./year";
 import { announcementText, bookingLine, guestsPhrase } from "./announcement";
-import { bookingFits, guestsGoing, headcount } from "./booking";
+import { bookingFits, guestsGoing, headcount, memberOnDate } from "./booking";
 import { narrowToFree } from "./candidates";
 import { computeChosenDate } from "./chosen-date";
 import {
@@ -449,6 +449,18 @@ describe("dinner party wording", () => {
       text,
       "December: dinner party — Friday 11 December. 6 of us, including Sienna's guest. Someone needs to host.",
     );
+  });
+});
+
+describe("a Member on the Chosen Date", () => {
+  it("is going, can't, or not answered from their Availability", () => {
+    const night = "2026-11-14";
+    // Free on the Chosen Date: going, whatever else they marked.
+    assert.equal(memberOnDate(["2026-11-14", "2026-11-20"], night), "going");
+    // Answered the month, but not that night.
+    assert.equal(memberOnDate(["2026-11-20"], night), "cant");
+    // No Availability recorded for the month.
+    assert.equal(memberOnDate([], night), "unanswered");
   });
 });
 

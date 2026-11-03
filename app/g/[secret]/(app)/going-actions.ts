@@ -59,6 +59,11 @@ export async function setGoing(
           ),
         );
     }
+    // A Plus-one only counts while their host is going. Leaving the night
+    // clears it, so it cannot reappear the next time they say they are going.
+    await db
+      .delete(plusOnes)
+      .where(and(eq(plusOnes.outingId, outingId), eq(plusOnes.memberId, member.id)));
   }
 
   await tellBookerIfChanged(outing, member.name);
@@ -168,6 +173,7 @@ async function settledOuting(outingId: string) {
 
 function refresh(secret: string) {
   revalidatePath(`/g/${secret}`);
+  revalidatePath(`/g/${secret}/dates`);
   revalidatePath(`/g/${secret}/free`);
   revalidatePath(`/g/${secret}/admin`);
 }

@@ -1,24 +1,18 @@
-import {
-  announcementText,
-  guestsPhrase,
-  monthName,
-  shortDate,
-} from "@/lib/cycle/announcement";
-import { headcount } from "@/lib/cycle/booking";
+import { announcementText, monthName, shortDate } from "@/lib/cycle/announcement";
 import type { Reveal as RevealData } from "@/lib/cycle/month-view";
 import { formatPriceTier } from "@/lib/cycle/tier";
 
 import styles from "./reveal.module.css";
 import { ShareButton } from "./share-button";
-import { TicketControls } from "./ticket-controls";
+import { Going, GoingPeople, Headcount } from "./ticket-controls";
 
 /**
  * The month, once it is settled: the ticket.
  *
- * Whoever added the drawn place books it, and the ticket says so by name until
- * someone taps "I've booked it". Who is coming can still change until the night,
- * and the headcount follows — so a table booked for seven that is now eight is
- * shown as exactly that, rather than the booking quietly rewriting itself.
+ * Whoever added the drawn place books it. Until someone taps "I've booked it"
+ * the ticket says so as "Jada's ticket · Jada books". Who is coming is a row of
+ * chips, and the headcount follows a tap at once — a table booked for seven
+ * that is now eight is shown as exactly that.
  */
 export function Reveal({
   data,
@@ -43,7 +37,6 @@ export function Reveal({
     bookedBy: data.bookedBy,
   });
 
-  const heads = headcount(data.going, data.guests);
   const over = data.status === "done";
 
   if (!data.chosenDate) {
@@ -71,9 +64,25 @@ export function Reveal({
   }
 
   const party = data.kind === "party";
+  const seatKey = data.seats
+    .map((seat) => `${seat.id}:${seat.answer}:${seat.plusOne ? 1 : 0}`)
+    .join(".");
 
   return (
-    <>
+    <Going
+      key={`${data.outingId}|${data.bookedBy ?? ""}|${data.bookedFor ?? ""}|${data.viewerDays.join(",")}|${seatKey}`}
+      secret={secret}
+      outingId={data.outingId}
+      chosenDate={data.chosenDate}
+      viewerId={data.viewerId}
+      viewerDays={data.viewerDays}
+      seats={data.seats}
+      bookedBy={data.bookedBy}
+      bookedByMe={data.bookedByMe}
+      bookedFor={data.bookedFor}
+      party={party}
+      over={over}
+    >
       <div className={styles.ticket}>
         <div className={styles.stamp}>
           {party ? "DINNER PARTY" : formatPriceTier(data.tier)}
@@ -84,7 +93,11 @@ export function Reveal({
           <p className={styles.address}>{data.address}</p>
         ) : null}
         {!party && data.pickedBy ? (
-          <p className={styles.picked}>Picked by {data.pickedBy}</p>
+          <p className={styles.picked}>
+            {over || data.bookedBy
+              ? `${data.pickedBy}’s ticket`
+              : `${data.pickedBy}’s ticket · ${data.pickedBy} books`}
+          </p>
         ) : null}
 
         <div className={styles.tear} />
@@ -96,7 +109,9 @@ export function Reveal({
           </div>
           <div>
             <span>{over ? "Went" : party ? "Coming" : "Table for"}</span>
-            <strong>{heads}</strong>
+            <strong>
+              <Headcount />
+            </strong>
           </div>
           {over ? null : party ? (
             <div>
@@ -114,31 +129,7 @@ export function Reveal({
         </div>
       </div>
 
-      {!over && !party && !data.bookedBy ? (
-        <p className={styles.toBook}>
-          {data.pickedBy
-            ? `${data.pickedBy} picked it, so ${data.pickedBy} books it.`
-            : "Someone needs to book it."}
-        </p>
-      ) : null}
-
-      <p className={styles.going}>
-        {over ? "Went" : "Going"}: {data.going.length > 0 ? data.going.join(", ") : "nobody yet"}
-        {data.guests.length > 0 ? `, plus ${guestsPhrase(data.guests)}` : ""}.
-      </p>
-
-      {over ? null : (
-        <TicketControls
-          secret={secret}
-          outingId={data.outingId}
-          party={party}
-          myGoing={data.myGoing}
-          myPlusOne={data.myPlusOne}
-          bookedBy={data.bookedBy}
-          bookedFor={data.bookedFor}
-          heads={heads}
-        />
-      )}
+      <GoingPeople />
 
       {over || !isAdmin ? null : <ShareButton text={text} outingId={data.outingId} />}
 
@@ -152,8 +143,6 @@ export function Reveal({
           {data.rerolled ? ", after a redraw" : ""}.
         </p>
       ) : null}
-
-
-    </>
+    </Going>
   );
 }

@@ -162,14 +162,85 @@ a.address {
   margin: 6px 0 0;
 }
 
-.pendingFact {
-  color: var(--amber-ink);
+/* Who is coming: filled, grey, or dashed. The viewer's own chip carries a ring. */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 0;
 }
 
-.going {
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  font-size: var(--step--1);
+  line-height: 1.2;
+}
+
+.chipGoing {
+  background: var(--bone);
+  color: var(--bone-ink);
+}
+
+.chipSilent {
+  background: var(--raised);
   color: var(--muted);
-  margin: 14px 0 0;
-  max-width: var(--measure);
+  border-color: var(--hairline);
+}
+
+.chipCant {
+  background: transparent;
+  color: var(--muted);
+  border: 1px dashed var(--hairline-strong);
+}
+
+.chipYou {
+  outline: 2px solid var(--amber);
+  outline-offset: 1px;
+}
+
+.badge {
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.4;
+  background: var(--amber);
+  color: var(--bone-ink);
+  border-radius: 999px;
+  padding: 0 5px;
+}
+
+.yours {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 12px 0 0;
+  color: var(--bone);
+}
+
+.bring {
+  background: transparent;
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--radius);
+  color: var(--muted);
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+.bringOn {
+  border-color: var(--amber);
+  color: var(--bone);
+}
+
+.pendingFact {
+  color: var(--amber-ink);
 }
 
 /* What you can do to a settled month: coming or not, a guest, the booking. */
@@ -193,6 +264,11 @@ a.address {
   padding: 12px 10px;
   cursor: pointer;
   white-space: nowrap;
+}
+
+.toggle:disabled,
+.bring:disabled {
+  opacity: 1;
 }
 
 .toggleOn {
@@ -244,10 +320,4 @@ a.address {
   color: var(--amber);
   font-size: var(--step--1);
   margin: 8px 0 0;
-}
-
-.toBook {
-  color: var(--amber);
-  margin: 14px 0 0;
-  max-width: var(--measure);
 }
