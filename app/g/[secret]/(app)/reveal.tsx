@@ -4,7 +4,6 @@ import { formatPriceTier } from "@/lib/cycle/tier";
 
 import { DrawnFrom } from "./drawn-from";
 import styles from "./reveal.module.css";
-import { ShareButton } from "./share-button";
 import { Going, GoingPeople, Headcount } from "./ticket-controls";
 
 /**
@@ -140,8 +139,6 @@ export function Reveal({
       <GoingPeople />
 
       {underControls}
-
-      {over || !isAdmin ? null : <ShareButton text={text} outingId={data.outingId} />}
 
       {!over && !party ? (
         <DrawnFrom tickets={data.hat} rerolled={data.rerolled} />

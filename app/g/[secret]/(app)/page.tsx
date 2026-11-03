@@ -23,7 +23,6 @@ import { currentMember } from "@/lib/identity/guard";
 import { claimNameForm } from "./actions";
 import styles from "./page.module.css";
 import { Rate } from "./rate";
-import { VisitScores } from "./rating-lines";
 import { Reveal } from "./reveal";
 import { Vote } from "./vote";
 
@@ -58,8 +57,9 @@ export default async function GroupHome({
       .where(eq(outings.status, "done")),
   ]);
 
-  // The last dinner stays on this screen for a few weeks. Anyone can read the
-  // scores; only a Member in the Visit's attendance is asked to rate it.
+  // The last dinner stays on this screen for a few weeks, but only as a question:
+  // a Member in the Visit's attendance who has not scored it yet is asked to.
+  // Everyone's scores, and your own once given, live on Past.
   const recentId =
     done?.chosenDate && daysAgo(done.chosenDate, today) <= 21 ? done.id : null;
   const [view, visits] = await Promise.all([
@@ -94,7 +94,7 @@ export default async function GroupHome({
         strip
       )}
 
-      {recentVisit && attended ? (
+      {recentVisit && attended && !mine ? (
         <Rate
           secret={secret}
           outingId={recentVisit.outingId}
@@ -102,12 +102,8 @@ export default async function GroupHome({
             recentVisit.place ??
             (recentVisit.kind === "party" ? "the dinner party" : monthName(recentVisit.month))
           }
-          existing={mine ? { score: mine.score, note: mine.note } : null}
+          existing={null}
         />
-      ) : null}
-
-      {recentVisit ? (
-        <VisitScores average={recentVisit.averageScore} ratings={recentVisit.ratings} />
       ) : null}
 
       <nav className={styles.doors} aria-label="What's next">

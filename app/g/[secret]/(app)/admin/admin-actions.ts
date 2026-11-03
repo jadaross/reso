@@ -417,6 +417,27 @@ export async function closeEarly(secret: string, outingId: string): Promise<Admi
   };
 }
 
+/**
+ * Undo "I've booked it".
+ *
+ * It used to be a link under the ticket that any Member could tap, so a stray
+ * thumb could clear a real booking. Now it lives here, with the other things
+ * only an Admin should be able to reverse.
+ */
+export async function unbook(secret: string, outingId: string): Promise<AdminResult> {
+  await requireAdmin();
+
+  const cleared = await getDb()
+    .update(outings)
+    .set({ bookedAt: null, bookedBy: null, bookedFor: null })
+    .where(and(eq(outings.id, outingId), eq(outings.status, "announced")))
+    .returning({ id: outings.id });
+
+  refresh(secret);
+  if (cleared.length === 0) return { ok: false, error: "That month can't be changed now." };
+  return { ok: true, note: "Marked as not booked." };
+}
+
 /** Rotate the Group Link. Devices already signed in are unaffected. */
 export async function rotateGroupLink(secret: string): Promise<AdminResult> {
   await requireAdmin();

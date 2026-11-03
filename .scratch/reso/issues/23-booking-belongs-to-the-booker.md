@@ -18,7 +18,8 @@ line and resets the booked-for count; everyone else sees only "Booked · 7:30 ·
 
 **Status:** ready-for-agent
 
-- [ ] Only the booker or an Admin sees "I've booked it" and "not booked after all"; a non-booker's screen has no booking controls
+- [ ] Only the booker or an Admin sees "I've booked it"; a non-booker's screen has no booking controls
+- [x] "Not booked after all" is off the ticket; it is an Admin panel button (2026-11-03)
 - [ ] "I've booked it" opens a sheet: time (default 19:30) and table for N (prefilled); the Outing stores both
 - [ ] The ticket's Booked cell reads "Not yet" before, and "7:30 · 7 · Jada" (or similar, one row) after
 - [ ] The unbooked ticket shows a "Book by" date, derived from the Chosen Date

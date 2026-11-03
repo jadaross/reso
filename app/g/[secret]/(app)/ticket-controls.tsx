@@ -10,12 +10,14 @@ import {
   type Seat,
 } from "@/lib/cycle/booking";
 
-import { markBooked, setGoing, setPlusOne, unmarkBooked } from "./going-actions";
+import { markBooked, setGoing, setPlusOne } from "./going-actions";
 import styles from "./reveal.module.css";
 
 /**
  * The settled month, as far as a tap can change it: who is coming, whether you
  * are, whether you are bringing someone, and whether the table is booked.
+ * Un-booking is not here: a mistaken "I've booked it" is undone from Admin, so
+ * nobody can clear the booking with a stray tap on the home screen.
  *
  * A tap is drawn at once from the days this Member already marked. The server
  * writes the same Availability row the calendar uses, then the page catches up.
@@ -41,7 +43,6 @@ type NightContext = {
   cant: () => void;
   togglePlus: () => void;
   mark: () => void;
-  unmark: () => void;
 };
 
 const Night = createContext<NightContext | null>(null);
@@ -163,19 +164,6 @@ export function Going({
     });
   }
 
-  function unmark() {
-    if (pending || over) return;
-    setBooked(false);
-    startTransition(async () => {
-      const result = await unmarkBooked(secret, outingId);
-      if (result.ok) setError(null);
-      else {
-        setBooked(true);
-        setError(result.error ?? "That didn’t save.");
-      }
-    });
-  }
-
   return (
     <Night.Provider
       value={{
@@ -196,7 +184,6 @@ export function Going({
         cant,
         togglePlus,
         mark,
-        unmark,
       }}
     >
       {children}
@@ -297,14 +284,6 @@ export function GoingPeople() {
               {fits
                 ? `Booked for ${night.bookedFor ?? night.heads}.`
                 : `Booked for ${night.bookedFor}, now ${night.heads}. ${tell} to tell them.`}
-              <button
-                type="button"
-                className={styles.quiet}
-                disabled={night.pending}
-                onClick={night.unmark}
-              >
-                not booked after all
-              </button>
             </div>
           ) : (
             <button

@@ -112,32 +112,6 @@
   }
 }
 
-.readout {
-  border: 1px solid var(--hairline);
-  border-radius: var(--radius);
-  padding: 18px 20px;
-  margin-top: 18px;
-}
-
-.average {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 12px;
-  margin: 0;
-}
-
-.average strong {
-  font-family: var(--font-bricolage), sans-serif;
-  font-size: var(--step-2);
-  color: var(--amber);
-}
-
-.average span {
-  color: var(--muted);
-  font-size: var(--step--1);
-}
-
 .error {
   color: var(--amber);
 }

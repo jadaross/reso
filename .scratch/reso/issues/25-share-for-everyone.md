@@ -12,7 +12,7 @@ in: <link>". Before the table is booked, the line says "not booked yet" instead 
 
 **Blocked by:** 23 — Booking belongs to the booker (for the time)
 
-**Status:** ready-for-agent
+**Status:** dropped — 2026-11-03, Jada: "share to group chat can be removed, I don't like it". The button, `share-button.tsx` and `share-actions.ts` are gone; the push is the only announcement.
 
 - [ ] Every Member sees a "Share" button under the ticket; the label is the one word
 - [ ] The text includes date, booked time, place, area where known, "booked for N" or "not booked yet", and the Group Link

@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 
-import { monthName, readableDate } from "@/lib/cycle/announcement";
+import { monthName, shortDate } from "@/lib/cycle/announcement";
 import { loadVisits } from "@/lib/cycle/month-view";
 import { shownRatings } from "@/lib/cycle/rating";
 import { formatPriceTier } from "@/lib/cycle/tier";
@@ -9,13 +9,15 @@ import { currentMember } from "@/lib/identity/guard";
 import styles from "../page.module.css";
 import { Rate } from "../rate";
 import { RatingNames } from "../rating-lines";
+import ticket from "../reveal.module.css";
 import rows from "./history.module.css";
 
 /**
- * Everywhere the Group has been, newest first — and, for anyone who was there,
- * the stars right on the row. The rating used to live only on the month screen
- * the morning after, which the next month's calendar had usually pushed off by
- * then; here it stays until it is given.
+ * Everywhere the Group has been, newest first, each as the ticket it was: the
+ * same stub Dinner showed that month, smaller, with the score where the booking
+ * used to be. For anyone who was there, the stars sit right under it. The rating
+ * used to live only on the month screen the morning after, which the next
+ * month's calendar had usually pushed off by then; here it stays until given.
  */
 export default async function History({
   params,
@@ -50,34 +52,48 @@ export default async function History({
         const label =
           visit.place ?? (visit.kind === "party" ? "the dinner party" : monthName(visit.month));
 
+        const party = visit.kind === "party";
+        const people = `${visit.went}${visit.guests > 0 ? ` + ${visit.guests}` : ""}`;
+
         return (
           <article key={visit.outingId} className={rows.visit}>
-            <div className={rows.head}>
-              <div>
-                <h2 className={rows.place}>
-                  {visit.place ??
-                    (visit.kind === "party" ? "Dinner party" : "No restaurant drawn")}
-                </h2>
-                <p className={rows.when}>
-                  {visit.chosenDate
-                    ? readableDate(visit.chosenDate)
-                    : monthName(visit.month)}
-                  {" · "}
-                  {visit.went} of us{visit.guests > 0 ? ` + ${visit.guests} ${visit.guests === 1 ? "guest" : "guests"}` : ""}
-                  {" · "}
-                  {formatPriceTier(visit.tier)}
-                  {visit.pickedBy ? ` · ${visit.pickedBy}’s pick` : ""}
-                </p>
+            <div className={`${ticket.ticket} ${rows.ticket}`}>
+              <div className={ticket.stamp}>
+                {party ? "DINNER PARTY" : formatPriceTier(visit.tier)}
               </div>
-              <div className={rows.score}>
-                {shown.lines.length === 0 || visit.averageScore === null ? (
-                  <span className={rows.unrated}>unrated</span>
-                ) : (
-                  <>
-                    <strong>{visit.averageScore.toFixed(1)}</strong>
-                    <span>from {shown.peopleLabel}</span>
-                  </>
-                )}
+              <div className={ticket.month}>{monthName(visit.month)}</div>
+              <h2 className={`${ticket.place} ${rows.place}`}>
+                {visit.place ?? (party ? "At someone’s" : "No restaurant drawn")}
+              </h2>
+              {!party && visit.address ? (
+                <p className={ticket.address}>{visit.address}</p>
+              ) : null}
+              {!party && visit.pickedBy ? (
+                <p className={ticket.picked}>{visit.pickedBy}’s ticket</p>
+              ) : null}
+
+              <div className={ticket.tear} />
+
+              <div className={ticket.facts}>
+                <div>
+                  <span>Date</span>
+                  <strong>{visit.chosenDate ? shortDate(visit.chosenDate) : "None"}</strong>
+                </div>
+                <div>
+                  <span>Went</span>
+                  <strong>{people}</strong>
+                </div>
+                <div>
+                  <span>Score</span>
+                  {shown.lines.length === 0 || visit.averageScore === null ? (
+                    <strong className={ticket.pendingFact}>Unrated</strong>
+                  ) : (
+                    <strong>
+                      {visit.averageScore.toFixed(1)}
+                      <small className={rows.from}> from {shown.peopleLabel}</small>
+                    </strong>
+                  )}
+                </div>
               </div>
             </div>
 

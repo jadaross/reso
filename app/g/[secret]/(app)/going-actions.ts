@@ -116,26 +116,6 @@ export async function markBooked(
   return { ok: true };
 }
 
-/** Undo a booking marked by mistake. */
-export async function unmarkBooked(
-  secret: string,
-  outingId: string,
-): Promise<GoingResult> {
-  const member = await currentMember();
-  if (!member) return { ok: false, error: "Tap your name first." };
-
-  const outing = await settledOuting(outingId);
-  if (!outing) return { ok: false, error: "That month can't be changed now." };
-
-  await getDb()
-    .update(outings)
-    .set({ bookedAt: null, bookedBy: null, bookedFor: null })
-    .where(eq(outings.id, outingId));
-
-  refresh(secret);
-  return { ok: true };
-}
-
 /** An Outing that is announced but has not happened, or null. */
 async function settledOuting(outingId: string) {
   const [outing] = await getDb()

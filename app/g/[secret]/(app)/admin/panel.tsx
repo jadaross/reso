@@ -20,6 +20,7 @@ import {
   rotateGroupLink,
   sendTestPush,
   tellEveryone,
+  unbook,
   type AdminResult,
 } from "./admin-actions";
 import styles from "./admin.module.css";
@@ -267,6 +268,16 @@ export function Panel({ secret, people, outings, archived }: PanelProps) {
               <span className={styles.hint}>
                 {outing.booked ? "Table booked." : "Table not booked yet."}
               </span>
+            ) : null}
+
+            {outing.status === "announced" && outing.kind !== "party" && outing.booked ? (
+              <button
+                type="button"
+                disabled={pending}
+                onClick={() => run(() => unbook(secret, outing.id))}
+              >
+                Not booked after all
+              </button>
             ) : null}
           </div>
         </section>
