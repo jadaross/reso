@@ -1,0 +1,1 @@
+ALTER TABLE "draws" ADD COLUMN "candidate_picks" jsonb DEFAULT '[]'::jsonb NOT NULL;

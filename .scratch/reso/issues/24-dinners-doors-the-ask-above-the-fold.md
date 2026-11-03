@@ -15,12 +15,12 @@ lands on December on the Dates tab. The vote is a door like the others ("January
 
 **Blocked by:** 20 — One word for price
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] The open month's strip is the first thing under the ticket controls and is visible without scrolling on a 390×844 viewport
-- [ ] The strip's chip shows "N tapped" and tapping the strip opens the Dates tab scrolled to that month (works with 26 when it lands; until then, the top of Dates)
-- [ ] The Month Vote is a door with "<Month> · N votes · counted <date>"; it opens inline and does not collapse after a vote
-- [ ] The open vote says in one line what happens on a tie (rota breaks a tie it is in; otherwise drawn)
-- [ ] "Drawn from N tickets" expands to the N Pick names and who holds each
-- [ ] The Places and Past doors remain, in that order, after the strip
-- [ ] The install nudge card at the bottom of Dinner is unchanged by this ticket (30 handles it)
+- [x] The open month's strip is the first thing under the ticket controls and is visible without scrolling on a 390×844 viewport
+- [x] The strip's chip shows "N tapped" and tapping the strip opens the Dates tab scrolled to that month (works with 26 when it lands; until then, the top of Dates)
+- [x] The Month Vote is a door with "<Month> · N votes · counted <date>"; it opens inline and does not collapse after a vote
+- [x] The open vote says in one line what happens on a tie (rota breaks a tie it is in; otherwise drawn)
+- [x] "Drawn from N tickets" expands to the N Pick names and who holds each
+- [x] The Places and Past doors remain, in that order, after the strip
+- [x] The install nudge card at the bottom of Dinner is unchanged by this ticket (30 handles it)

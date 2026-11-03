@@ -5,6 +5,7 @@ import {
   doublePrecision,
   index,
   integer,
+  jsonb,
   pgEnum,
   pgTable,
   primaryKey,
@@ -289,6 +290,14 @@ export const draws = pgTable(
       .references(() => picks.id, { onDelete: "restrict" }),
     isReroll: boolean("is_reroll").notNull().default(false),
     candidateCount: integer("candidate_count").notNull(),
+    /**
+     * The Picks that were in the hat, by name and holder, in draw order.
+     * A Pick can be removed later; the ticket still has to list what was drawn from.
+     */
+    candidatePicks: jsonb("candidate_picks")
+      .$type<{ name: string; holder: string }[]>()
+      .notNull()
+      .default([]),
     drawnAt: timestamp("drawn_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

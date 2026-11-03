@@ -3,8 +3,9 @@ import { asc, count, eq, isNull } from "drizzle-orm";
 import Link from "next/link";
 
 import { InstallBanner, NotificationsSetup } from "@/components/device-setup";
-import { monthName, shortDate } from "@/lib/cycle/announcement";
+import { monthName } from "@/lib/cycle/announcement";
 import { addMonths, todayInLondon } from "@/lib/cycle/dates";
+import { openMonthLine, tappedChip } from "@/lib/cycle/doors";
 import {
   announcedOuting,
   latestDoneOuting,
@@ -12,6 +13,7 @@ import {
   loadReveal,
   loadVisits,
   openOuting,
+  type MonthView,
 } from "@/lib/cycle/month-view";
 import { isSettled, loadVote, rotaFor, voteMonthFor } from "@/lib/cycle/vote";
 import { getDb } from "@/lib/db";
@@ -26,11 +28,10 @@ import { Reveal } from "./reveal";
 import { Vote } from "./vote";
 
 /**
- * The Dinner screen: the ticket, then one card per thing that might want you.
+ * Dinner: the ticket, then the open month's ask, then Places, Past and the vote.
  *
- * Each card is a door to a tab, and says what is waiting behind it — how many
- * evenings you've tapped, whether the last dinner has your score — so the
- * screen reads as a to-do list rather than a menu.
+ * The ask sits directly under the ticket's controls, so it is on screen before
+ * a rating or anything else that wants a tap.
  */
 export default async function GroupHome({
   params,
@@ -71,6 +72,7 @@ export default async function GroupHome({
   const nothingSettled = !announced;
 
   const nextMonth = open?.month ?? (announced ? addMonths(announced.month, 1) : null);
+  const strip = view ? <OpenMonthStrip secret={secret} view={view} /> : null;
 
   return (
     <>
@@ -80,6 +82,7 @@ export default async function GroupHome({
           data={await loadReveal(announced, member.id)}
           secret={secret}
           isAdmin={member.isAdmin}
+          underControls={strip}
         />
       ) : nothingSettled && done && !open ? (
         <Reveal
@@ -87,7 +90,9 @@ export default async function GroupHome({
           secret={secret}
           isAdmin={member.isAdmin}
         />
-      ) : null}
+      ) : (
+        strip
+      )}
 
       {recentVisit && attended ? (
         <Rate
@@ -106,17 +111,7 @@ export default async function GroupHome({
       ) : null}
 
       <nav className={styles.doors} aria-label="What's next">
-        {view ? (
-          <Link href={`/g/${secret}/dates`} className={`${styles.door} ${view.mine.size === 0 ? styles.doorHot : ""}`}>
-            <strong>Your dates for {monthName(view.month)}</strong>
-            <span>
-              {view.mine.size === 0
-                ? "Nothing tapped yet"
-                : `${view.mine.size} ${view.mine.size === 1 ? "evening" : "evenings"} tapped`}
-              {" · "}closes {shortDate(view.closeDay)}
-            </span>
-          </Link>
-        ) : (
+        {view ? null : (
           <Link href={`/g/${secret}/dates`} className={styles.door}>
             <strong>Your dates</strong>
             <span>
@@ -146,12 +141,33 @@ export default async function GroupHome({
               : "None yet"}
           </span>
         </Link>
-      </nav>
 
-      {vote ? <Vote secret={secret} view={vote} me={member.name} /> : null}
+        {vote ? <Vote secret={secret} view={vote} me={member.name} /> : null}
+      </nav>
 
       <NotificationsSetup secret={secret} />
     </>
+  );
+}
+
+/** Dates' open month. The hash matches the id on that screen. */
+function OpenMonthStrip({ secret, view }: { secret: string; view: MonthView }) {
+  const quiet = view.mine.size > 0;
+  return (
+    <Link
+      href={`/g/${secret}/dates#open-month`}
+      className={quiet ? styles.strip : `${styles.strip} ${styles.stripHot}`}
+    >
+      <span>
+        {openMonthLine({
+          month: view.month,
+          tier: view.tier,
+          kind: view.kind,
+          closeDay: view.closeDay,
+        })}
+      </span>
+      <span className={styles.chip}>{tappedChip(view.mine.size)}</span>
+    </Link>
   );
 }
 

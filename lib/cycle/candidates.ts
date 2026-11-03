@@ -7,6 +7,33 @@ import type { DayString } from "./dates";
 
 export type Candidate = { id: string; memberId: string };
 
+export type LabelledCandidate = { name: string; holder: string };
+
+/**
+ * The name and holder of each candidate, in the order the Draw saw them.
+ *
+ * Two Picks of the same place stay two rows: the site does not merge them.
+ */
+export async function labelCandidates(
+  ids: readonly string[],
+): Promise<LabelledCandidate[]> {
+  if (ids.length === 0) return [];
+
+  const rows = await getDb()
+    .select({ id: picks.id, name: picks.name, holder: members.name })
+    .from(picks)
+    .innerJoin(members, eq(members.id, picks.memberId))
+    .where(inArray(picks.id, [...ids]));
+
+  const byId = new Map(
+    rows.map((row) => [row.id, { name: row.name, holder: row.holder }]),
+  );
+  return ids.flatMap((id) => {
+    const row = byId.get(id);
+    return row ? [row] : [];
+  });
+}
+
 /**
  * Ticket 18: the Draw is built from the Picks of people who can actually come.
  *

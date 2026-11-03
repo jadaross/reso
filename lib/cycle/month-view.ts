@@ -14,6 +14,7 @@ import {
 
 import { goingMembers } from "./attendance";
 import { guestsGoing, memberOnDate, type NightAnswer, type Seat } from "./booking";
+import { drawPoolFor, labelCandidates, type LabelledCandidate } from "./candidates";
 import { computeChosenDate, type DayTally } from "./chosen-date";
 import {
   calendarGrid,
@@ -192,8 +193,10 @@ export type Reveal = {
   bookedFor: number | null;
   /** How many tickets the drawn place held — why it won. */
   tickets: number;
-  /** How many Picks were in the tier at all. */
+  /** How many Picks were in the hat. */
   candidates: number;
+  /** Those Picks, by name and holder. Empty when the draw could not be listed. */
+  hat: LabelledCandidate[];
   rerolled: boolean;
 };
 
@@ -229,7 +232,12 @@ export async function loadReveal(
       .innerJoin(members, eq(members.id, plusOnes.memberId))
       .where(eq(plusOnes.outingId, outing.id)),
     db
-      .select({ isReroll: draws.isReroll, candidateCount: draws.candidateCount })
+      .select({
+        isReroll: draws.isReroll,
+        candidateCount: draws.candidateCount,
+        candidatePicks: draws.candidatePicks,
+        pickId: draws.pickId,
+      })
       .from(draws)
       .where(eq(draws.outingId, outing.id))
       .orderBy(asc(draws.drawnAt)),
@@ -298,6 +306,22 @@ export async function loadReveal(
     : 0;
 
   const going = attending.map((row) => row.name);
+  const lastDraw = drawRows.at(-1);
+  const recorded = asHat(lastDraw?.candidatePicks);
+  // A draw from before the hat was stored has only a count. Rebuild it from the
+  // same pool Close Day uses, excluding the pick a reroll had already set aside.
+  const hat =
+    recorded.length > 0
+      ? recorded
+      : lastDraw && outing.kind === "restaurant"
+        ? await labelCandidates(
+            (
+              await drawPoolFor(outing.id, outing.tier, outing.chosenDate, {
+                exclude: lastDraw.isReroll ? drawRows.at(-2)?.pickId : null,
+              })
+            ).candidates.map((candidate) => candidate.id),
+          )
+        : [];
 
   return {
     outingId: outing.id,
@@ -331,9 +355,29 @@ export async function loadReveal(
     bookedBy: outing.bookedAt ? (booker[0]?.name ?? "someone") : null,
     bookedFor: outing.bookedAt ? outing.bookedFor : null,
     tickets,
-    candidates: drawRows.at(-1)?.candidateCount ?? 0,
+    candidates: hat.length > 0 ? hat.length : (lastDraw?.candidateCount ?? 0),
+    hat,
     rerolled: drawRows.some((row) => row.isReroll),
   };
+}
+
+function asHat(value: unknown): LabelledCandidate[] {
+  const parsed = typeof value === "string" ? safeJson(value) : value;
+  if (!Array.isArray(parsed)) return [];
+  return parsed.flatMap((row) => {
+    if (!row || typeof row !== "object") return [];
+    const name = "name" in row && typeof row.name === "string" ? row.name : null;
+    const holder = "holder" in row && typeof row.holder === "string" ? row.holder : null;
+    return name && holder ? [{ name, holder }] : [];
+  });
+}
+
+function safeJson(value: string): unknown {
+  try {
+    return JSON.parse(value);
+  } catch {
+    return null;
+  }
 }
 
 /**

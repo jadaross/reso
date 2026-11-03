@@ -3,7 +3,7 @@
 import { and, asc, eq, inArray, isNull } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
-import { drawPoolFor } from "@/lib/cycle/candidates";
+import { drawPoolFor, labelCandidates } from "@/lib/cycle/candidates";
 import { closeDueOutings } from "@/lib/cycle/close";
 import { drawFrom } from "@/lib/cycle/draw";
 import { getDb } from "@/lib/db";
@@ -282,6 +282,7 @@ export async function reroll(
     pickId: drawn.id,
     isReroll: true,
     candidateCount: candidates.length,
+    candidatePicks: await labelCandidates(candidates.map((candidate) => candidate.id)),
   });
 
   refresh(secret);

@@ -2,25 +2,24 @@
 
 import { useState, useTransition } from "react";
 
-import { monthName, shortDate } from "@/lib/cycle/announcement";
 import { CHOICES, formatMonthChoice, type VoteView } from "@/lib/cycle/month-choice";
-import { formatPriceTier } from "@/lib/cycle/tier";
+import { tieRule, voteDoorLine } from "@/lib/cycle/doors";
 import type { MonthChoice } from "@/lib/db/schema";
 
 import { castVoteAction } from "./vote-actions";
 import styles from "./vote.module.css";
 
-/** A choice in a sentence, where "Dinner party" is not a title. */
-function choiceInSentence(choice: MonthChoice): string {
-  return choice === "party" ? "dinner party" : formatPriceTier(choice);
-}
+/**
+ * The refresh after a vote remounts this door. Remember that it was open so it
+ * does not fold itself shut the moment a vote lands.
+ */
+const heldOpen = new Set<string>();
 
 /**
  * The vote on what kind of month the one after next should be.
  *
- * Folded up once you have voted, with the state of play on one line; open
- * until you have, because that is the one thing it wants from you. The rota
- * is the fallback: it stands when nobody votes and breaks a tie it is in.
+ * A door, like the others: one line when shut, the four choices and the tie
+ * rule when open. It stays open after a vote.
  */
 export function Vote({
   secret,
@@ -32,7 +31,7 @@ export function Vote({
   me: string;
 }) {
   const [mine, setMine] = useState<MonthChoice | null>(view.mine);
-  const [open, setOpen] = useState(view.mine === null);
+  const [open, setOpen] = useState(() => heldOpen.has(view.month));
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -44,12 +43,17 @@ export function Vote({
   if (mine) names[mine] = [...names[mine], me].sort((a, b) => a.localeCompare(b, "en-GB"));
 
   const total = CHOICES.reduce((sum, choice) => sum + names[choice].length, 0);
-  const top = Math.max(...CHOICES.map((choice) => names[choice].length));
-  const leaders = CHOICES.filter((choice) => names[choice].length === top && top > 0);
+
+  function setDoor(next: boolean) {
+    if (next) heldOpen.add(view.month);
+    else heldOpen.delete(view.month);
+    setOpen(next);
+  }
 
   function pick(choice: MonthChoice) {
     const next = mine === choice ? null : choice;
     setMine(next);
+    setDoor(true);
     startTransition(async () => {
       const result = await castVoteAction(secret, next);
       if (!result.ok) {
@@ -57,43 +61,31 @@ export function Vote({
         setError(result.error);
       } else {
         setError(null);
+        setDoor(true);
       }
     });
   }
 
-  const month = monthName(view.month);
-  const summary =
-    total === 0
-      ? `Nobody has voted. The rota says ${formatPriceTier(view.rota)}.`
-      : leaders.length === 1
-        ? `${formatMonthChoice(leaders[0])} leads, ${top} of ${total}.`
-        : `Tied between ${leaders.map((choice) => choiceInSentence(choice)).join(" and ")}.`;
+  const month = view.month;
 
   return (
-    <section className={styles.vote} aria-labelledby="month-vote">
+    <section aria-labelledby="month-vote">
       <button
         type="button"
-        className={styles.head}
+        className={styles.door}
         aria-expanded={open}
-        onClick={() => setOpen(!open)}
+        onClick={() => setDoor(!open)}
       >
-        <span>
-          <strong id="month-vote" className={styles.heading}>
-            What kind of month should {month} be?
-          </strong>
-          <span className={styles.small}>
-            {summary} Counted {shortDate(view.countedOn)}.
-            {mine ? ` You: ${choiceInSentence(mine)}.` : " You haven’t voted."}
-          </span>
-        </span>
+        <strong id="month-vote">{voteDoorLine(month, total, view.countedOn)}</strong>
         <span className={styles.chevron} aria-hidden>
           {open ? "−" : "+"}
         </span>
       </button>
 
       {open ? (
-        <>
-          <div className={styles.choices} role="group" aria-label={`Your vote for ${month}`}>
+        <div className={styles.panel}>
+          <p className={styles.tie}>{tieRule()}</p>
+          <div className={styles.choices} role="group" aria-label="Your vote">
             {CHOICES.map((choice) => {
               const on = mine === choice;
               return (
@@ -105,13 +97,7 @@ export function Vote({
                   className={on ? `${styles.choice} ${styles.on}` : styles.choice}
                   onClick={() => pick(choice)}
                 >
-                  <span className={styles.label}>
-                    {choice === "party" ? (
-                      formatMonthChoice(choice)
-                    ) : (
-                      <span className={styles.mark}>{formatPriceTier(choice)}</span>
-                    )}
-                  </span>
+                  <span>{formatMonthChoice(choice)}</span>
                   <span className={styles.count}>{names[choice].length}</span>
                 </button>
               );
@@ -130,7 +116,7 @@ export function Vote({
           ) : null}
 
           {error ? <p className={styles.error}>{error}</p> : null}
-        </>
+        </div>
       ) : null}
     </section>
   );

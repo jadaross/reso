@@ -125,10 +125,49 @@ a.address {
   margin: 8px 0 0;
 }
 
-.why {
+.hat {
+  margin-top: 14px;
+}
+
+.hatButton {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 0;
   color: var(--muted);
-  margin: 18px 0 0;
-  max-width: var(--measure);
+  font-size: var(--step--1);
+  text-align: left;
+  cursor: pointer;
+}
+
+.hatMark {
+  flex: none;
+  font-size: var(--step-1);
+  line-height: 1;
+}
+
+.hatList {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.hatList li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: var(--step--1);
+  color: var(--bone);
+}
+
+.holder {
+  color: var(--muted);
 }
 
 .draft {

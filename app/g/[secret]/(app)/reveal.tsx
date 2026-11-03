@@ -2,6 +2,7 @@ import { announcementText, monthName, shortDate } from "@/lib/cycle/announcement
 import type { Reveal as RevealData } from "@/lib/cycle/month-view";
 import { formatPriceTier } from "@/lib/cycle/tier";
 
+import { DrawnFrom } from "./drawn-from";
 import styles from "./reveal.module.css";
 import { ShareButton } from "./share-button";
 import { Going, GoingPeople, Headcount } from "./ticket-controls";
@@ -18,10 +19,13 @@ export function Reveal({
   data,
   secret,
   isAdmin,
+  underControls,
 }: {
   data: RevealData;
   secret: string;
   isAdmin: boolean;
+  /** The open month's ask. It sits directly under the ticket's controls. */
+  underControls?: React.ReactNode;
 }) {
   const text = announcementText({
     month: data.month,
@@ -41,12 +45,15 @@ export function Reveal({
 
   if (!data.chosenDate) {
     return (
-      <div className={styles.empty}>
-        <strong>Nobody put any dates in for {monthName(data.month)}.</strong>
-        {data.kind === "party"
-          ? "So there is no dinner party to host."
-          : "So there is nothing to book."}
-      </div>
+      <>
+        <div className={styles.empty}>
+          <strong>Nobody put any dates in for {monthName(data.month)}.</strong>
+          {data.kind === "party"
+            ? "So there is no dinner party to host."
+            : "So there is nothing to book."}
+        </div>
+        {underControls}
+      </>
     );
   }
 
@@ -59,6 +66,7 @@ export function Reveal({
           from. Add some places and ask the Admin to draw.
         </div>
         {isAdmin ? <p className={styles.draft}>{text}</p> : null}
+        {underControls}
       </>
     );
   }
@@ -131,17 +139,12 @@ export function Reveal({
 
       <GoingPeople />
 
+      {underControls}
+
       {over || !isAdmin ? null : <ShareButton text={text} outingId={data.outingId} />}
 
-      {!over && !party && data.candidates > 0 ? (
-        <p className={styles.why}>
-          {data.tickets > 1
-            ? `${data.tickets} of you had it down. `
-            : ""}
-          Drawn from {data.candidates}{" "}
-          {data.candidates === 1 ? "ticket" : "tickets"}
-          {data.rerolled ? ", after a redraw" : ""}.
-        </p>
+      {!over && !party ? (
+        <DrawnFrom tickets={data.hat} rerolled={data.rerolled} />
       ) : null}
     </Going>
   );

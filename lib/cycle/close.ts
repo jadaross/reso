@@ -11,7 +11,7 @@ import {
 
 import { seedFromAdvance } from "./advance";
 import { freezeAttendance } from "./attendance";
-import { drawPoolFor } from "./candidates";
+import { drawPoolFor, labelCandidates } from "./candidates";
 import { computeChosenDate } from "./chosen-date";
 import {
   addMonths,
@@ -158,6 +158,7 @@ export async function closeDueOutings(
         pickId: drawn.id,
         isReroll: false,
         candidateCount: candidates.length,
+        candidatePicks: await labelCandidates(candidates.map((candidate) => candidate.id)),
       });
     }
 
