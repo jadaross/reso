@@ -1,21 +1,23 @@
-import { eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { redirect } from "next/navigation";
 
 import { shortDate } from "@/lib/cycle/announcement";
 import { computeChosenDate } from "@/lib/cycle/chosen-date";
 import { daysInMonth } from "@/lib/cycle/dates";
+import { decideMonth } from "@/lib/cycle/month-choice";
 import {
   announcedOuting,
   latestDoneOuting,
   openOuting,
 } from "@/lib/cycle/month-view";
+import { stablePick, tierBaseline, tierMark } from "@/lib/cycle/override";
+import { rotaFor, votesFor } from "@/lib/cycle/vote";
 import { getDb } from "@/lib/db";
-import { availability, draws, picks, type Outing } from "@/lib/db/schema";
+import { availability, draws, members, picks, type Outing } from "@/lib/db/schema";
 import { currentMember } from "@/lib/identity/guard";
 
 import styles from "../page.module.css";
 import { roster } from "./admin-actions";
-import admin from "./admin.module.css";
 import { Panel, type PanelOuting } from "./panel";
 
 export default async function AdminPage({
@@ -64,9 +66,6 @@ export default async function AdminPage({
   return (
     <>
       <h1 className={styles.title}>Admin</h1>
-      <p className={admin.hint}>
-        Anyone who taps your name gets this too, so keep the group link to the group.
-      </p>
       <Panel
         secret={secret}
         people={people}
@@ -79,17 +78,55 @@ export default async function AdminPage({
 
 async function describe(outing: Outing): Promise<PanelOuting> {
   const db = getDb();
-  const [tapped, inTier, drawRows] = await Promise.all([
+  const [tapped, inTier, drawRows, drawn, votes, rota] = await Promise.all([
     db
       .select({ memberId: availability.memberId, day: availability.day })
       .from(availability)
-      .where(eq(availability.outingId, outing.id)),
+      .innerJoin(members, eq(members.id, availability.memberId))
+      .where(and(eq(availability.outingId, outing.id), isNull(members.archivedAt))),
     db.select({ id: picks.id }).from(picks).where(eq(picks.tier, outing.tier)),
     db
       .select({ isReroll: draws.isReroll })
       .from(draws)
       .where(eq(draws.outingId, outing.id)),
+    outing.drawnPickId
+      ? db
+          .select({ name: picks.name })
+          .from(picks)
+          .where(eq(picks.id, outing.drawnPickId))
+          .limit(1)
+      : Promise.resolve([]),
+    votesFor(outing.month),
+    rotaFor(outing.month),
   ]);
+
+  const computed = computeChosenDate(daysInMonth(outing.month), tapped);
+  const decision = decideMonth(votes, rota, stablePick);
+  const baseline = tierBaseline(
+    decision.how,
+    { kind: outing.kind, tier: outing.tier },
+    decision,
+    outing.tierOverridden,
+  );
+
+  const topDays = computed.topDays.map((tally) => ({
+    ...tally,
+    label: shortDate(tally.day),
+  }));
+  // A pinned night can fall out of the top three. Keep it tappable, or it cannot be undone.
+  if (
+    outing.chosenDateOverridden &&
+    outing.chosenDate &&
+    !topDays.some((day) => day.day === outing.chosenDate)
+  ) {
+    topDays.unshift({
+      day: outing.chosenDate,
+      count: new Set(
+        tapped.filter((row) => row.day === outing.chosenDate).map((row) => row.memberId),
+      ).size,
+      label: shortDate(outing.chosenDate),
+    });
+  }
 
   return {
     id: outing.id,
@@ -98,11 +135,17 @@ async function describe(outing: Outing): Promise<PanelOuting> {
     kind: outing.kind,
     status: outing.status,
     chosenDate: outing.chosenDate,
+    chosenDateOverridden: outing.chosenDateOverridden,
+    tierOverridden: outing.tierOverridden,
+    baseline: {
+      source: baseline.source,
+      label: tierMark(baseline.kind, baseline.tier),
+    },
+    leader: computed.chosenDate ? shortDate(computed.chosenDate) : null,
+    place: drawn[0]?.name ?? null,
     booked: Boolean(outing.bookedAt),
     rerolled: drawRows.some((row) => row.isReroll),
     emptyTier: outing.kind !== "party" && inTier.length === 0,
-    topDays: computeChosenDate(daysInMonth(outing.month), tapped).topDays.map(
-      (tally) => ({ ...tally, label: shortDate(tally.day) }),
-    ),
+    topDays,
   };
 }

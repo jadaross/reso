@@ -12,7 +12,8 @@ import {
 import { seedFromAdvance } from "./advance";
 import { freezeAttendance } from "./attendance";
 import { drawPoolFor, labelCandidates } from "./candidates";
-import { computeChosenDate } from "./chosen-date";
+import { computeChosenDate, QUORUM } from "./chosen-date";
+import { resolveChosenDate } from "./override";
 import {
   addMonths,
   closeDayFor,
@@ -61,7 +62,9 @@ export async function ensureOpenOuting(
       month,
       tier: decision.tier,
       kind: decision.kind,
-      tierOverridden: decision.how !== "rota",
+      // A vote is the month's own decision, not an Admin override. The flag is
+      // only set when an Admin steps in, so "Back to the vote" has something to clear.
+      tierOverridden: false,
       status: "open",
     })
     .onConflictDoNothing({ target: outings.month })
@@ -105,6 +108,8 @@ export async function closeDueOutings(
       month: outings.month,
       tier: outings.tier,
       kind: outings.kind,
+      chosenDate: outings.chosenDate,
+      chosenDateOverridden: outings.chosenDateOverridden,
     })
     .from(outings)
     .where(eq(outings.status, "open"));
@@ -126,6 +131,11 @@ export async function closeDueOutings(
       .where(and(eq(availability.outingId, outing.id), isNull(members.archivedAt)));
 
     const chosen = computeChosenDate(daysInMonth(outing.month), tapped);
+    // A pin survives Close Day. Clearing it is what lets the tally decide again.
+    const date = resolveChosenDate(chosen.chosenDate, {
+      chosenDate: outing.chosenDate,
+      overridden: outing.chosenDateOverridden,
+    });
 
     // A dinner party has no Draw: nobody's Pick is a ticket, and the empty-tier
     // warning below is not a warning at all. Otherwise the pool is the tier,
@@ -133,7 +143,7 @@ export async function closeDueOutings(
     const pool =
       outing.kind === "party"
         ? { candidates: [], inTier: 0, narrowed: false }
-        : await drawPoolFor(outing.id, outing.tier, chosen.chosenDate);
+        : await drawPoolFor(outing.id, outing.tier, date);
     const candidates = pool.candidates;
 
     const drawn = drawFrom(candidates);
@@ -143,7 +153,7 @@ export async function closeDueOutings(
       .update(outings)
       .set({
         status: "announced",
-        chosenDate: chosen.chosenDate,
+        chosenDate: date,
         drawnPickId: drawn?.id ?? null,
         closedAt: new Date(),
       })
@@ -168,9 +178,9 @@ export async function closeDueOutings(
     // so reading "who was free on the Chosen Date" months afterwards would let the
     // record of a dinner quietly rewrite itself. The Admin can correct this list
     // until the Visit has been rated.
-    if (chosen.chosenDate) {
+    if (date) {
       const going = tapped
-        .filter((row) => row.day === chosen.chosenDate)
+        .filter((row) => row.day === date)
         .map((row) => row.memberId);
 
       if (going.length > 0) {
@@ -181,11 +191,15 @@ export async function closeDueOutings(
       }
     }
 
+    const count = date
+      ? new Set(tapped.filter((row) => row.day === date).map((row) => row.memberId)).size
+      : 0;
+
     results.push({
       month: outing.month,
-      chosenDate: chosen.chosenDate,
-      count: chosen.count,
-      quorumMet: chosen.quorumMet,
+      chosenDate: date,
+      count,
+      quorumMet: count >= QUORUM,
       drawnPickId: drawn?.id ?? null,
       // OPEN DECISION: what the site should actually do when a tier has no Picks
       // is still fog on the wayfinder map. Closing with no Drawn Pick and

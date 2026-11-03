@@ -1,0 +1,2 @@
+ALTER TABLE "outings" ADD COLUMN "chosen_date_pinned_by" uuid;--> statement-breakpoint
+ALTER TABLE "outings" ADD CONSTRAINT "outings_chosen_date_pinned_by_members_id_fk" FOREIGN KEY ("chosen_date_pinned_by") REFERENCES "public"."members"("id") ON DELETE set null ON UPDATE no action;

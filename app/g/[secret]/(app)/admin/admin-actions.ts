@@ -3,9 +3,25 @@
 import { and, asc, eq, inArray, isNull } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
+import { monthName, shortDate } from "@/lib/cycle/announcement";
 import { drawPoolFor, labelCandidates } from "@/lib/cycle/candidates";
+import { computeChosenDate } from "@/lib/cycle/chosen-date";
 import { closeDueOutings } from "@/lib/cycle/close";
+import { daysInMonth, type DayString } from "@/lib/cycle/dates";
 import { drawFrom } from "@/lib/cycle/draw";
+import { decideMonth } from "@/lib/cycle/month-choice";
+import {
+  clearDatePin,
+  pinNote,
+  stablePick,
+  tapNight,
+  tierClearedNote,
+  tierSetNote,
+  tierSource,
+  voteAgainNote,
+} from "@/lib/cycle/override";
+import { formatPriceTier } from "@/lib/cycle/tier";
+import { rotaFor, votesFor } from "@/lib/cycle/vote";
 import { getDb } from "@/lib/db";
 import {
   advanceAvailability,
@@ -27,6 +43,7 @@ export type AdminResult = { ok: true; note?: string } | { ok: false; error: stri
 function refresh(secret: string) {
   revalidatePath(`/g/${secret}`);
   revalidatePath(`/g/${secret}/admin`);
+  revalidatePath(`/g/${secret}/dates`);
   revalidatePath(`/g/${secret}/places`);
 }
 
@@ -161,7 +178,15 @@ export async function overrideTier(
 ): Promise<AdminResult> {
   await requireAdmin();
 
-  await getDb()
+  const db = getDb();
+  const [outing] = await db
+    .select({ month: outings.month })
+    .from(outings)
+    .where(eq(outings.id, outingId))
+    .limit(1);
+  if (!outing) return { ok: false, error: "That month is gone." };
+
+  await db
     .update(outings)
     .set(
       choice === "party"
@@ -171,57 +196,139 @@ export async function overrideTier(
     .where(eq(outings.id, outingId));
 
   refresh(secret);
+  const mark = choice === "party" ? "a dinner party" : formatPriceTier(choice);
+  return { ok: true, note: tierSetNote(monthName(outing.month), mark) };
+}
+
+/** Put the month back to whatever the rota or the vote had already decided. */
+export async function clearTierOverride(
+  secret: string,
+  outingId: string,
+): Promise<AdminResult> {
+  await requireAdmin();
+
+  const db = getDb();
+  const [outing] = await db
+    .select({ month: outings.month })
+    .from(outings)
+    .where(eq(outings.id, outingId))
+    .limit(1);
+  if (!outing) return { ok: false, error: "That month is gone." };
+
+  const [votes, rota] = await Promise.all([
+    votesFor(outing.month),
+    rotaFor(outing.month),
+  ]);
+  const decision = decideMonth(votes, rota, stablePick);
+
+  await db
+    .update(outings)
+    .set({ kind: decision.kind, tier: decision.tier, tierOverridden: false })
+    .where(eq(outings.id, outingId));
+
+  refresh(secret);
   return {
     ok: true,
-    note: choice === "party" ? "This month is now a dinner party." : `This month is now ${choice}.`,
+    note: tierClearedNote(monthName(outing.month), tierSource(decision.how)),
   };
 }
 
-/** Pick a different day from the top few, when the arithmetic misses something. */
+/**
+ * Pin a night, or clear the pin by tapping it again.
+ *
+ * Who is going follows the date, so a closed Outing's attendance is rebuilt
+ * from Availability on the night that results. An open Outing has no attendance
+ * yet; Close Day writes it, and a pin still in place is the date it uses.
+ */
 export async function overrideChosenDate(
   secret: string,
   outingId: string,
   day: string,
 ): Promise<AdminResult> {
+  const admin = await requireAdmin();
+  return applyDate(secret, outingId, (current, recomputed) => {
+    const next = tapNight(current, day as DayString, recomputed);
+    return { ...next, pinnedBy: next.overridden ? admin.id : null };
+  });
+}
+
+/** Drop the pin and take the night the tally leads with now. */
+export async function letVoteDecide(
+  secret: string,
+  outingId: string,
+): Promise<AdminResult> {
   await requireAdmin();
+  return applyDate(secret, outingId, (_current, recomputed) => ({
+    ...clearDatePin(recomputed),
+    pinnedBy: null,
+  }));
+}
 
+async function applyDate(
+  secret: string,
+  outingId: string,
+  decide: (
+    current: { chosenDate: DayString | null; overridden: boolean },
+    recomputed: DayString | null,
+  ) => { chosenDate: DayString | null; overridden: boolean; pinnedBy: string | null },
+): Promise<AdminResult> {
   const db = getDb();
-  await db
-    .update(outings)
-    .set({ chosenDate: day, chosenDateOverridden: true })
-    .where(eq(outings.id, outingId));
-
-  // Who is going follows the date, so it is rebuilt rather than left stale.
   const [outing] = await db
-    .select({ status: outings.status })
+    .select({
+      month: outings.month,
+      status: outings.status,
+      chosenDate: outings.chosenDate,
+      chosenDateOverridden: outings.chosenDateOverridden,
+    })
     .from(outings)
     .where(eq(outings.id, outingId))
     .limit(1);
+  if (!outing) return { ok: false, error: "That month is gone." };
 
-  if (outing?.status !== "open") {
-    const free = await db
-      .select({ memberId: availability.memberId })
-      .from(availability)
-      .innerJoin(members, eq(members.id, availability.memberId))
-      .where(
-        and(
-          eq(availability.outingId, outingId),
-          eq(availability.day, day),
-          isNull(members.archivedAt),
-        ),
-      );
+  const tapped = await db
+    .select({ memberId: availability.memberId, day: availability.day })
+    .from(availability)
+    .innerJoin(members, eq(members.id, availability.memberId))
+    .where(and(eq(availability.outingId, outingId), isNull(members.archivedAt)));
 
+  const recomputed = computeChosenDate(daysInMonth(outing.month), tapped).chosenDate;
+  const next = decide(
+    { chosenDate: outing.chosenDate, overridden: outing.chosenDateOverridden },
+    recomputed,
+  );
+
+  await db
+    .update(outings)
+    .set({
+      chosenDate: next.chosenDate,
+      chosenDateOverridden: next.overridden,
+      chosenDatePinnedBy: next.pinnedBy,
+    })
+    .where(eq(outings.id, outingId));
+
+  if (outing.status !== "open") {
     await db.delete(attendance).where(eq(attendance.outingId, outingId));
-    if (free.length > 0) {
-      await db
-        .insert(attendance)
-        .values(free.map((row) => ({ outingId, memberId: row.memberId })))
-        .onConflictDoNothing();
+    if (next.chosenDate) {
+      const free = tapped.filter((row) => row.day === next.chosenDate);
+      const memberIds = [...new Set(free.map((row) => row.memberId))];
+      if (memberIds.length > 0) {
+        await db
+          .insert(attendance)
+          .values(memberIds.map((memberId) => ({ outingId, memberId })))
+          .onConflictDoNothing();
+      }
     }
   }
 
   refresh(secret);
-  return { ok: true, note: "Date changed, and who's going with it." };
+  const month = monthName(outing.month);
+  if (next.overridden && next.chosenDate) {
+    return { ok: true, note: pinNote(month, shortDate(next.chosenDate)) };
+  }
+  return {
+    ok: true,
+    note: voteAgainNote(month, next.chosenDate ? shortDate(next.chosenDate) : null),
+  };
 }
 
 /**

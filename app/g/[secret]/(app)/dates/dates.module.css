@@ -74,6 +74,12 @@
   margin: 0 0 12px;
 }
 
+.pin {
+  margin: 0 0 8px;
+  color: var(--amber);
+  font-size: var(--step--1);
+}
+
 .opening > .fold:first-child {
   margin-top: 0;
 }
@@ -83,7 +89,8 @@
 }
 
 .fold + .fold,
-.fold + .month {
+.fold + .month,
+.fold + .pin {
   margin-top: 8px;
 }
 

@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 
 import { monthName } from "@/lib/cycle/announcement";
+import { drawAgainLabel, tierHeading, tierUndo } from "@/lib/cycle/override";
 import { formatPriceTier } from "@/lib/cycle/tier";
 import type { MonthChoice, PriceTier } from "@/lib/db/schema";
 
@@ -10,7 +11,9 @@ import {
   addMember,
   archiveMember,
   restoreMember,
+  clearTierOverride,
   closeEarly,
+  letVoteDecide,
   overrideChosenDate,
   overrideTier,
   reroll,
@@ -28,6 +31,14 @@ export type PanelOuting = {
   kind: "restaurant" | "party";
   status: "open" | "announced" | "done";
   chosenDate: string | null;
+  chosenDateOverridden: boolean;
+  tierOverridden: boolean;
+  /** What the rota or the vote decided, which an override is sitting on top of. */
+  baseline: { source: "rota" | "vote"; label: string };
+  /** The night the tally currently leads with, written the way dates are. */
+  leader: string | null;
+  /** The Drawn Pick's name, once there is one. */
+  place: string | null;
   booked: boolean;
   rerolled: boolean;
   topDays: { day: string; count: number; label: string }[];
@@ -146,8 +157,10 @@ export function Panel({ secret, people, outings, archived }: PanelProps) {
             {monthName(outing.month)}{" "}
             <em className={styles.status}>{STATUS_WORD[outing.status]}</em>
           </h2>
-          <div className={styles.control}>
-            <span className={styles.label}>Kind of month</span>
+          <div className={styles.override}>
+            <span className={styles.label}>
+              {tierHeading(outing.baseline.source, outing.baseline.label)}
+            </span>
             <div className={styles.choices}>
               {(["low", "medium", "high", "party"] as const).map((choice) => {
                 const current: MonthChoice =
@@ -165,30 +178,53 @@ export function Panel({ secret, people, outings, archived }: PanelProps) {
                 );
               })}
             </div>
+            {outing.tierOverridden ? (
+              <button
+                type="button"
+                className={styles.back}
+                disabled={pending}
+                onClick={() => run(() => clearTierOverride(secret, outing.id))}
+              >
+                {tierUndo(outing.baseline.source)}
+              </button>
+            ) : null}
           </div>
 
-          {topDays.length > 0 ? (
-            <div className={styles.control}>
+          {topDays.length > 0 || outing.chosenDateOverridden ? (
+            <div className={styles.override}>
               <span className={styles.label}>
-                {outing.status === "open" ? "Leading dates" : "Date"}
+                {outing.leader ? `Vote leads ${outing.leader}` : "Vote leads"}
               </span>
-              <div className={styles.choices}>
-                {topDays.map((day) => (
-                  <button
-                    key={day.day}
-                    type="button"
-                    disabled={pending}
-                    className={
-                      day.day === outing.chosenDate ? styles.chosen : undefined
-                    }
-                    onClick={() =>
-                      run(() => overrideChosenDate(secret, outing.id, day.day))
-                    }
-                  >
-                    {day.label} <em>{day.count}</em>
-                  </button>
-                ))}
-              </div>
+              <span className={styles.label}>Pin a night</span>
+              {topDays.length > 0 ? (
+                <div className={styles.choices}>
+                  {topDays.map((day) => (
+                    <button
+                      key={day.day}
+                      type="button"
+                      disabled={pending}
+                      className={
+                        outing.chosenDateOverridden && day.day === outing.chosenDate
+                          ? styles.chosen
+                          : undefined
+                      }
+                      onClick={() =>
+                        run(() => overrideChosenDate(secret, outing.id, day.day))
+                      }
+                    >
+                      {day.label} <em>{day.count}</em>
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+              <button
+                type="button"
+                className={styles.back}
+                disabled={pending || !outing.chosenDateOverridden}
+                onClick={() => run(() => letVoteDecide(secret, outing.id))}
+              >
+                Let the vote decide
+              </button>
             </div>
           ) : null}
 
@@ -216,7 +252,7 @@ export function Panel({ secret, people, outings, archived }: PanelProps) {
                 disabled={pending}
                 onClick={() => run(() => reroll(secret, outing.id))}
               >
-                Draw again
+                {outing.booked && outing.place ? drawAgainLabel(outing.place) : "Draw again"}
               </button>
             ) : null}
 
@@ -225,7 +261,9 @@ export function Panel({ secret, people, outings, archived }: PanelProps) {
                 Already redrawn once this month.
               </span>
             ) : null}
-            {outing.status === "announced" && outing.kind !== "party" ? (
+            {outing.status === "announced" &&
+            outing.kind !== "party" &&
+            !(outing.booked && outing.place && !outing.rerolled) ? (
               <span className={styles.hint}>
                 {outing.booked ? "Table booked." : "Table not booked yet."}
               </span>

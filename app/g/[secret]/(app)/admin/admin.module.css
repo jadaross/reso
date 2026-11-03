@@ -105,13 +105,27 @@
   color: var(--bone);
 }
 
-.control {
+.control,
+.override {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  flex-wrap: wrap;
-  margin-bottom: 14px;
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.back {
+  background: none;
+  border: none;
+  color: var(--amber);
+  font-size: var(--step--1);
+  cursor: pointer;
+  padding: 8px 0;
+}
+
+.back:disabled {
+  color: var(--muted);
+  cursor: default;
 }
 
 .label {
@@ -161,6 +175,10 @@
   color: var(--bone);
   padding: 11px 16px;
   cursor: pointer;
+  max-width: 100%;
+  text-align: left;
+  white-space: normal;
+  line-height: 1.4;
 }
 
 .danger {

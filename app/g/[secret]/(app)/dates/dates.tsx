@@ -49,6 +49,8 @@ export type DatesProps = {
   /** Who is free on each day, as Member ids, from everyone's answers. */
   free: Record<string, string[]>;
   months: DatesMonth[];
+  /** "<Admin> pinned <night>", keyed by month, while a pin is in place. */
+  pins: Record<string, string>;
   /** The month taking dates for the next dinner, if one is. */
   open: {
     month: string;
@@ -64,7 +66,7 @@ export type DatesProps = {
  * later, as whole months, so a burst of taps is one request and out-of-order
  * replies cannot undo one.
  */
-export function Dates({ secret, me, today, people, free, months, open }: DatesProps) {
+export function Dates({ secret, me, today, people, free, months, pins, open }: DatesProps) {
   const [mode, setMode] = useState<Mode>("mine");
   const [days, setDays] = useState<Days>(() =>
     Object.fromEntries(months.map((each) => [each.month, each.days])),
@@ -405,6 +407,12 @@ export function Dates({ secret, me, today, people, free, months, open }: DatesPr
           >
             {monthGrid(each, null)}
           </Fold>
+        ))}
+
+        {Object.entries(pins).map(([month, line]) => (
+          <p key={month} className={styles.pin}>
+            {line}
+          </p>
         ))}
 
         {openMonth && picture ? (

@@ -5,8 +5,9 @@ import { shortDate } from "@/lib/cycle/announcement";
 import { loadEveryone, loadYear } from "@/lib/cycle/advance";
 import { closeDayFor, todayInLondon } from "@/lib/cycle/dates";
 import { openOuting } from "@/lib/cycle/month-view";
+import { pinLine } from "@/lib/cycle/override";
 import { getDb } from "@/lib/db";
-import { attendance, outings, picks, plusOnes } from "@/lib/db/schema";
+import { attendance, members, outings, picks, plusOnes } from "@/lib/db/schema";
 import { currentMember } from "@/lib/identity/guard";
 
 import styles from "../page.module.css";
@@ -27,10 +28,11 @@ export default async function DatesPage({
   if (!member) redirect(`/g/${secret}`);
 
   const today = todayInLondon();
-  const [months, everyone, open] = await Promise.all([
+  const [months, everyone, open, pins] = await Promise.all([
     loadYear(member.id, today),
     loadEveryone(today),
     openOuting(),
+    pinnedLines(),
   ]);
   const labelled = await withPlaces(months, member.id);
 
@@ -49,6 +51,7 @@ export default async function DatesPage({
         people={everyone.people}
         free={everyone.free}
         months={labelled.months}
+        pins={pins}
         open={
           open
             ? {
@@ -110,4 +113,24 @@ async function withPlaces(
       };
     }),
   };
+}
+
+/** "<Admin> pinned <night>" for every month an Admin has pinned. */
+async function pinnedLines(): Promise<Record<string, string>> {
+  const rows = await getDb()
+    .select({
+      month: outings.month,
+      chosenDate: outings.chosenDate,
+      admin: members.name,
+    })
+    .from(outings)
+    .leftJoin(members, eq(members.id, outings.chosenDatePinnedBy))
+    .where(eq(outings.chosenDateOverridden, true));
+
+  const lines: Record<string, string> = {};
+  for (const row of rows) {
+    if (!row.chosenDate) continue;
+    lines[row.month] = pinLine(row.admin ?? "Admin", shortDate(row.chosenDate));
+  }
+  return lines;
 }

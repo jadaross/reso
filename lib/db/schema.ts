@@ -174,6 +174,10 @@ export const outings = pgTable("outings", {
   chosenDateOverridden: boolean("chosen_date_overridden")
     .notNull()
     .default(false),
+  /** The Admin who pinned the Chosen Date. Null while the tally is in charge. */
+  chosenDatePinnedBy: uuid("chosen_date_pinned_by").references(() => members.id, {
+    onDelete: "set null",
+  }),
   drawnPickId: uuid("drawn_pick_id").references(() => picks.id, {
     onDelete: "set null",
   }),

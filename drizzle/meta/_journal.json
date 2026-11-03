@@ -36,6 +36,13 @@
       "when": 1793731101143,
       "tag": "0004_draw_hat",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1793732034971,
+      "tag": "0005_chosen_date_pin",
+      "breakpoints": true
     }
   ]
 }
