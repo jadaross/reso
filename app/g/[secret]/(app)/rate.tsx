@@ -17,8 +17,8 @@ const SAVED_MS = 2000;
  * filled in on a Sunday morning. The note is what makes the history worth reading
  * a year later, so it is offered but never required.
  *
- * Once it has been saved the card is one line — the place, the stars, the note —
- * and a tap opens it again. "Saved." is only the moment after a save.
+ * Once it has been saved the card collapses to the place and the stars, with the
+ * note on its own line underneath, and a tap opens it again. "Saved." is only the moment after a save.
  */
 export function Rate({
   secret,
@@ -88,8 +88,10 @@ export function Rate({
               setEditing(true);
             }}
           >
-            {line.place} <span className={styles.marks}>{line.stars}</span>
-            {line.quote ? ` · ${line.quote}` : null}
+            <span className={styles.lineTop}>
+              {line.place} <span className={styles.marks}>{line.stars}</span>
+            </span>
+            {line.quote ? <span className={styles.quote}>{line.quote}</span> : null}
           </button>
           {flash ? (
             <p className={styles.saved} role="status">
