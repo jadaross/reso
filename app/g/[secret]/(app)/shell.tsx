@@ -17,16 +17,20 @@ import styles from "./shell.module.css";
 export function Shell({
   secret,
   member,
+  slot,
   children,
 }: {
   secret: string;
   member: Member;
+  /** The current Outing, "Nov · ££" or "Nov · dinner party". */
+  slot: string;
   children: React.ReactNode;
 }) {
   return (
     <Frame
       base={`/g/${secret}`}
       isAdmin={member.isAdmin}
+      slot={slot}
       who={
         <form action={switchNameForm}>
           <input type="hidden" name="secret" value={secret} />

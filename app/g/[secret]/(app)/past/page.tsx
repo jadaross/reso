@@ -6,7 +6,6 @@ import { shownRatings } from "@/lib/cycle/rating";
 import { formatPriceTier } from "@/lib/cycle/tier";
 import { currentMember } from "@/lib/identity/guard";
 
-import { Eyebrow } from "../frame";
 import styles from "../page.module.css";
 import { Rate } from "../rate";
 import { RatingNames } from "../rating-lines";
@@ -31,8 +30,12 @@ export default async function History({
 
   return (
     <>
-      <Eyebrow text={visits.length === 1 ? "1 dinner" : `${visits.length} dinners`} />
-      <h1 className={styles.title}>Where we&rsquo;ve been</h1>
+      <h1 className={styles.headline}>
+        Where we&rsquo;ve been
+        <span className={styles.headlineNote}>
+          {visits.length === 1 ? "1 dinner" : `${visits.length} dinners`}
+        </span>
+      </h1>
 
       {visits.length === 0 ? (
         <p className={rows.empty}>

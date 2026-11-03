@@ -77,6 +77,28 @@ export function monthName(month: string): string {
   });
 }
 
+/** "Nov", the same short month the dates use. */
+export function shortMonth(month: string): string {
+  return new Date(`${month.slice(0, 7)}-01T00:00:00Z`).toLocaleDateString("en-GB", {
+    month: "short",
+    timeZone: "UTC",
+  });
+}
+
+/**
+ * The header slot, identical on every tab: the current Outing's month, then its
+ * Price Tier. A Dinner Party is a kind of Outing, not a tier, so it keeps its name.
+ */
+export function formatHeaderSlot(outing: {
+  month: string;
+  kind: "restaurant" | "party";
+  tier: PriceTier;
+}): string {
+  const month = shortMonth(outing.month);
+  if (outing.kind === "party") return `${month} · dinner party`;
+  return `${month} · ${formatPriceTier(outing.tier)}`;
+}
+
 export function readableDate(day: DayString): string {
   return new Date(`${day}T00:00:00Z`).toLocaleDateString("en-GB", {
     weekday: "long",

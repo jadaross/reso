@@ -6,8 +6,8 @@ import { todayInLondon } from "@/lib/cycle/dates";
 import { loadMonthView, openOuting } from "@/lib/cycle/month-view";
 import { currentMember } from "@/lib/identity/guard";
 
-import { Eyebrow } from "../frame";
 import { InTheRunning } from "../in-the-running";
+import styles from "../page.module.css";
 import { Dates } from "./dates";
 
 /**
@@ -34,7 +34,12 @@ export default async function DatesPage({
 
   return (
     <>
-      <Eyebrow text={view ? `${shortDate(view.closeDay)} close` : ""} />
+      <h1 className={styles.headline}>
+        Dates
+        {view ? (
+          <span className={styles.headlineNote}>closes {shortDate(view.closeDay)}</span>
+        ) : null}
+      </h1>
       <Dates
         secret={secret}
         me={member.id}
@@ -46,7 +51,6 @@ export default async function DatesPage({
           view
             ? {
                 month: view.month,
-                closeDay: view.closeDay,
                 myPlusOne: view.myPlusOne,
                 standing: standing(view),
                 running: (

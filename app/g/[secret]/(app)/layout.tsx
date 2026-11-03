@@ -1,3 +1,5 @@
+import { formatHeaderSlot } from "@/lib/cycle/announcement";
+import { currentOuting } from "@/lib/cycle/month-view";
 import { currentMember } from "@/lib/identity/guard";
 
 import { BareShell, Shell } from "./shell";
@@ -22,12 +24,16 @@ export default async function AppLayout({
   params: Promise<{ secret: string }>;
 }) {
   const { secret } = await params;
-  const member = await currentMember();
+  const [member, outing] = await Promise.all([currentMember(), currentOuting()]);
 
   if (!member) return <BareShell>{children}</BareShell>;
 
   return (
-    <Shell secret={secret} member={member}>
+    <Shell
+      secret={secret}
+      member={member}
+      slot={outing ? formatHeaderSlot(outing) : ""}
+    >
       {children}
     </Shell>
   );

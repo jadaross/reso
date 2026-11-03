@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import { daysOnWeekday, daysWithin, monthsAhead, monthsShown } from "./year";
-import { announcementText, bookingLine, guestsPhrase } from "./announcement";
+import { announcementText, bookingLine, formatHeaderSlot, guestsPhrase } from "./announcement";
 import { bookingFits, guestsGoing, headcount, memberOnDate } from "./booking";
 import { narrowToFree } from "./candidates";
 import { computeChosenDate } from "./chosen-date";
@@ -66,6 +66,30 @@ describe("price tier on screen", () => {
     assert.equal(formatPriceTier("low"), "£");
     assert.equal(formatPriceTier("medium"), "££");
     assert.equal(formatPriceTier("high"), "£££");
+  });
+});
+
+describe("header slot", () => {
+  it("names the current Outing's month and price tier", () => {
+    assert.equal(
+      formatHeaderSlot({ month: "2026-11-01", kind: "restaurant", tier: "medium" }),
+      "Nov · ££",
+    );
+    assert.equal(
+      formatHeaderSlot({ month: "2026-01-01", kind: "restaurant", tier: "low" }),
+      "Jan · £",
+    );
+    assert.equal(
+      formatHeaderSlot({ month: "2026-03-01", kind: "restaurant", tier: "high" }),
+      "Mar · £££",
+    );
+  });
+
+  it("names a dinner party instead of a price tier", () => {
+    assert.equal(
+      formatHeaderSlot({ month: "2026-11-01", kind: "party", tier: "medium" }),
+      "Nov · dinner party",
+    );
   });
 });
 

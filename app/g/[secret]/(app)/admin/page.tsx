@@ -13,7 +13,6 @@ import { getDb } from "@/lib/db";
 import { availability, draws, picks, type Outing } from "@/lib/db/schema";
 import { currentMember } from "@/lib/identity/guard";
 
-import { Eyebrow } from "../frame";
 import styles from "../page.module.css";
 import { roster } from "./admin-actions";
 import admin from "./admin.module.css";
@@ -64,7 +63,6 @@ export default async function AdminPage({
 
   return (
     <>
-      <Eyebrow text="Admin" />
       <h1 className={styles.title}>Admin</h1>
       <p className={admin.hint}>
         Anyone who taps your name gets this too, so keep the group link to the group.

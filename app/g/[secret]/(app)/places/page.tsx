@@ -9,7 +9,6 @@ import { getDb } from "@/lib/db";
 import { members, picks, type PriceTier } from "@/lib/db/schema";
 import { currentAdmin, currentMember } from "@/lib/identity/guard";
 
-import { Eyebrow } from "../frame";
 import styles from "../page.module.css";
 import { AddForm } from "./add-form";
 import { AddressControl, RemoveControl, RetryLink, TierControl } from "./row-controls";
@@ -65,8 +64,12 @@ export default async function Restaurants({
 
   return (
     <>
-      <Eyebrow text={all.length === 1 ? "1 place" : `${all.length} places`} />
-      <h1 className={styles.title}>Places</h1>
+      <h1 className={styles.headline}>
+        Places
+        <span className={styles.headlineNote}>
+          {all.length === 1 ? "1 place" : `${all.length} places`}
+        </span>
+      </h1>
       <p className={styles.lede}>
         Add anywhere you fancy. Only you see yours, so the draw stays a surprise.
         The same place added twice goes in twice.

@@ -11,10 +11,10 @@ into that tab's headline where it belongs.
 
 **Blocked by:** 20 — One word for price
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Dinner, Dates, Places, Past and Admin all show "<Mon> · <tier>" top-right, and nothing else in that slot but the Admin link
-- [ ] The Admin page no longer reads "Admin · Admin"
-- [ ] The Dates deadline reads "closes Sun 22 Nov" inside the Dates screen, not in the header slot
-- [ ] The Places count and the Past count live in their own screens' headlines
-- [ ] When the current Outing is a Dinner Party the slot says "Nov · dinner party"
+- [x] Dinner, Dates, Places, Past and Admin all show "<Mon> · <tier>" top-right, and nothing else in that slot but the Admin link
+- [x] The Admin page no longer reads "Admin · Admin"
+- [x] The Dates deadline reads "closes Sun 22 Nov" inside the Dates screen, not in the header slot
+- [x] The Places count and the Past count live in their own screens' headlines
+- [x] When the current Outing is a Dinner Party the slot says "Nov · dinner party"

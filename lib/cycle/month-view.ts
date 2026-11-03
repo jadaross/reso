@@ -364,6 +364,23 @@ export async function latestDoneOuting() {
   return outing ?? null;
 }
 
+/**
+ * The Outing the shell is talking about.
+ *
+ * The settled dinner wins: from Close Day until it has happened, that is the
+ * month the Group is going to, even after next month has opened. Otherwise the
+ * month still taking Availability, and failing that the last dinner that
+ * happened, so the slot stays filled once the Group has had an Outing.
+ */
+export async function currentOuting() {
+  const [announced, open, done] = await Promise.all([
+    announcedOuting(),
+    openOuting(),
+    latestDoneOuting(),
+  ]);
+  return announced ?? open ?? done;
+}
+
 /** The Outing being shown when nothing is open: the most recent announced or done. */
 export async function latestSettledOuting() {
   const [outing] = await getDb()

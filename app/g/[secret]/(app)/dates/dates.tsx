@@ -36,7 +36,6 @@ export type DatesProps = {
   /** The month taking dates for the next dinner, if one is. */
   open: {
     month: string;
-    closeDay: string;
     myPlusOne: boolean;
     standing: string;
     running: React.ReactNode;
@@ -284,9 +283,7 @@ export function Dates({ secret, me, today, people, free, months, open }: DatesPr
                 <span className={styles.year}>{each.month.slice(0, 4)}</span>
               </h2>
               {isOpen ? (
-                <span className={styles.tagOpen}>
-                  next dinner · closes {shortDate(open.closeDay)}
-                </span>
+                <span className={styles.tagOpen}>next dinner</span>
               ) : dinner ? (
                 <span className={styles.tag}>
                   dinner {shortDate(dinner)}

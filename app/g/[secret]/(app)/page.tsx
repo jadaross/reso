@@ -4,7 +4,7 @@ import Link from "next/link";
 
 import { InstallBanner, NotificationsSetup } from "@/components/device-setup";
 import { monthName, shortDate } from "@/lib/cycle/announcement";
-import { addMonths, closeDayFor, todayInLondon } from "@/lib/cycle/dates";
+import { addMonths, todayInLondon } from "@/lib/cycle/dates";
 import {
   announcedOuting,
   latestDoneOuting,
@@ -13,14 +13,12 @@ import {
   loadVisits,
   openOuting,
 } from "@/lib/cycle/month-view";
-import { formatPriceTier } from "@/lib/cycle/tier";
 import { isSettled, loadVote, rotaFor, voteMonthFor } from "@/lib/cycle/vote";
 import { getDb } from "@/lib/db";
 import { members, outings, picks } from "@/lib/db/schema";
 import { currentMember } from "@/lib/identity/guard";
 
 import { claimNameForm } from "./actions";
-import { Eyebrow } from "./frame";
 import styles from "./page.module.css";
 import { Rate } from "./rate";
 import { VisitScores } from "./rating-lines";
@@ -72,21 +70,11 @@ export default async function GroupHome({
   const mine = recentVisit?.ratings.find((row) => row.memberId === member.id) ?? null;
   const nothingSettled = !announced;
 
-  const eyebrow = announced
-    ? announced.kind === "party"
-      ? "Dinner party"
-      : `${formatPriceTier(announced.tier)} month`
-    : open
-      ? `${monthName(open.month)} draws ${shortDate(closeDayFor(open.month))}`
-      : "";
-
   const nextMonth = open?.month ?? (announced ? addMonths(announced.month, 1) : null);
 
   return (
     <>
       <InstallBanner />
-      {eyebrow ? <Eyebrow text={eyebrow} /> : null}
-
       {announced ? (
         <Reveal
           data={await loadReveal(announced, member.id)}
