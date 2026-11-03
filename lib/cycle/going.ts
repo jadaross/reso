@@ -1,7 +1,7 @@
 import { and, eq } from "drizzle-orm";
 
 import { getDb } from "@/lib/db";
-import { attendance, outings, picks, plusOnes } from "@/lib/db/schema";
+import { attendance, availability, outings, picks, plusOnes } from "@/lib/db/schema";
 
 import { goingMembers } from "./attendance";
 import { bookingFits, headcount } from "./booking";
@@ -10,10 +10,10 @@ import { pushToMembers } from "./messages";
 type SettledOuting = typeof outings.$inferSelect;
 
 /**
- * Put a Member on, or take them off, a settled month's going-list.
+ * Put a Member on, or take them off, the Visit's attendance.
  *
- * Shared by the ticket's Going / Can't make it and by tapping the dinner date
- * on the Dates tab, so the two can never disagree about what going means.
+ * This is the record frozen the morning after. Until then the ticket and the
+ * Dates fold do not read it — they read Availability on the Chosen Date.
  */
 export async function setAttendance(
   outing: SettledOuting,
@@ -26,6 +26,47 @@ export async function setAttendance(
     await db.insert(attendance).values({ outingId: outing.id, memberId }).onConflictDoNothing();
   } else {
     await db.delete(attendance).where(mine);
+  }
+}
+
+/**
+ * Say whether a Member is coming to a settled Outing.
+ *
+ * Going adds the Chosen Date to their Availability. Can't drops only that
+ * night, and the Plus-one with it, and leaves every other day they marked.
+ * The ticket's buttons and the Dates fold both read that Availability.
+ * Dinner's Going and Can't make it call this. The calendar writes the same
+ * Availability when the Chosen Date is toggled.
+ */
+export async function setMemberGoing(
+  outing: SettledOuting,
+  memberId: string,
+  going: boolean,
+): Promise<void> {
+  const db = getDb();
+  await setAttendance(outing, memberId, going);
+
+  if (outing.chosenDate) {
+    if (going) {
+      await db
+        .insert(availability)
+        .values({ outingId: outing.id, memberId, day: outing.chosenDate })
+        .onConflictDoNothing();
+    } else {
+      await db.delete(availability).where(
+        and(
+          eq(availability.outingId, outing.id),
+          eq(availability.memberId, memberId),
+          eq(availability.day, outing.chosenDate),
+        ),
+      );
+    }
+  }
+
+  if (!going) {
+    await db
+      .delete(plusOnes)
+      .where(and(eq(plusOnes.outingId, outing.id), eq(plusOnes.memberId, memberId)));
   }
 }
 

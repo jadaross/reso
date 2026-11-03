@@ -7,12 +7,12 @@ import { shortDate } from "@/lib/cycle/announcement";
 import {
   currentHeadcount,
   placeOf,
-  setAttendance,
+  setMemberGoing,
   tellBookerIfChanged,
 } from "@/lib/cycle/going";
 import { everyoneIds, pushToMembers } from "@/lib/cycle/messages";
 import { getDb } from "@/lib/db";
-import { availability, outings, plusOnes } from "@/lib/db/schema";
+import { outings, plusOnes } from "@/lib/db/schema";
 import { currentMember } from "@/lib/identity/guard";
 
 export type GoingResult = { ok: true; note?: string } | { ok: false; error: string };
@@ -37,34 +37,9 @@ export async function setGoing(
   const outing = await settledOuting(outingId);
   if (!outing) return { ok: false, error: "That month can't be changed now." };
 
-  const db = getDb();
-  await setAttendance(outing, member.id, going);
-
-  if (going) {
-    if (outing.chosenDate) {
-      await db
-        .insert(availability)
-        .values({ outingId, memberId: member.id, day: outing.chosenDate })
-        .onConflictDoNothing();
-    }
-  } else {
-    if (outing.chosenDate) {
-      await db
-        .delete(availability)
-        .where(
-          and(
-            eq(availability.outingId, outingId),
-            eq(availability.memberId, member.id),
-            eq(availability.day, outing.chosenDate),
-          ),
-        );
-    }
-    // A Plus-one only counts while their host is going. Leaving the night
-    // clears it, so it cannot reappear the next time they say they are going.
-    await db
-      .delete(plusOnes)
-      .where(and(eq(plusOnes.outingId, outingId), eq(plusOnes.memberId, member.id)));
-  }
+  // Going is the Chosen Date in Availability. Can't drops that night and the
+  // Plus-one, so it cannot reappear the next time they say they are going.
+  await setMemberGoing(outing, member.id, going);
 
   await tellBookerIfChanged(outing, member.name);
   refresh(secret);
