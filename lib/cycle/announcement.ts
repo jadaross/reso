@@ -1,5 +1,6 @@
 import type { PriceTier } from "@/lib/db/schema";
 
+import { memberOnDate } from "./booking";
 import type { DayString } from "./dates";
 import { formatPriceTier } from "./tier";
 
@@ -115,4 +116,69 @@ export function shortDate(day: DayString): string {
     month: "short",
     timeZone: "UTC",
   });
+}
+
+/** "Sat 14" — the month is already named on the same line. */
+export function weekdayAndDay(day: DayString): string {
+  return new Date(`${day}T00:00:00Z`).toLocaleDateString("en-GB", {
+    weekday: "short",
+    day: "numeric",
+    timeZone: "UTC",
+  });
+}
+
+/** "Sat 12 Dec leads · 3 of 6 · Jack, Lottie, Sienna" */
+export function leadHeadline(
+  day: DayString,
+  count: number,
+  memberCount: number,
+  names: readonly string[],
+): string {
+  return `${shortDate(day)} leads · ${count} of ${memberCount} · ${names.join(", ")}`;
+}
+
+/** Where the viewer stands on a settled month's Chosen Date. */
+export type GoingMark = "going" | "cant" | "unanswered" | "went";
+
+/**
+ * Going is being free on the Chosen Date. A Member who has answered the month
+ * but not that night can't. A Visit keeps who went, which is that same answer
+ * frozen, so a done month reads the record rather than today's taps.
+ */
+export function goingMarkFor(
+  days: readonly string[],
+  chosenDate: string | null,
+  settled: "announced" | "done",
+  went = false,
+): GoingMark {
+  if (settled === "done") return went ? "went" : "unanswered";
+  if (!chosenDate) return "unanswered";
+  return memberOnDate(days, chosenDate);
+}
+
+const GOING_WORD: Record<GoingMark, string | null> = {
+  going: "Going ✓",
+  cant: "Can’t",
+  went: "Went ✓",
+  unanswered: null,
+};
+
+/** "November · Sat 14 · Smoking Goat · Going ✓" */
+export function settledFoldLine(input: {
+  month: string;
+  chosenDate: string | null;
+  place: string | null;
+  going: GoingMark;
+}): string {
+  const parts = [monthName(input.month)];
+  if (input.chosenDate) parts.push(weekdayAndDay(input.chosenDate));
+  if (input.place) parts.push(input.place);
+  const mark = GOING_WORD[input.going];
+  if (mark) parts.push(mark);
+  return parts.join(" · ");
+}
+
+/** "January and beyond" — the months after the one that is open. */
+export function beyondLabel(month: string): string {
+  return `${monthName(month)} and beyond`;
 }

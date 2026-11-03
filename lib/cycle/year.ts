@@ -36,6 +36,38 @@ export function monthsShown(today: DayString): MonthString[] {
   return [monthOf(today), ...monthsAhead(today)];
 }
 
+/**
+ * Where Dates should open: the month taking Availability, the settled months
+ * before it, and everything after it.
+ *
+ * With no open Outing the settled months still come first, and the rest stay
+ * in order for the year ahead.
+ */
+export function partitionDatesMonths<T extends { month: string; state: string }>(
+  months: readonly T[],
+  openMonth: string | null,
+): { before: T[]; current: T | null; after: T[] } {
+  if (!openMonth) {
+    return {
+      before: months.filter(
+        (month) => month.state === "announced" || month.state === "done",
+      ),
+      current: null,
+      after: months.filter(
+        (month) => month.state !== "announced" && month.state !== "done",
+      ),
+    };
+  }
+
+  const index = months.findIndex((month) => month.month === openMonth);
+  if (index === -1) return { before: [], current: null, after: [...months] };
+  return {
+    before: months.slice(0, index),
+    current: months[index] ?? null,
+    after: months.slice(index + 1),
+  };
+}
+
 /** Every day of `month` that falls on `weekday` (0 = Sunday … 6 = Saturday). */
 export function daysOnWeekday(month: MonthString, weekday: number): DayString[] {
   return daysInMonth(month).filter((day) => weekdayOf(day) === weekday);

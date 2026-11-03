@@ -17,15 +17,15 @@ The instruction sentence goes; the weekday letters look tappable. Every tied nig
 
 **Blocked by:** 20 — One word for price
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Opening Dates, or tapping the Dinner strip, lands with the open month's grid in view and nothing above it but the folded settled month
-- [ ] The open month's headline is "<night> leads · N of M · names", updating live as taps land
-- [ ] Each night shows one number (how many are free) or nothing; the viewer's own free nights are filled amber; the leading night is outlined
-- [ ] "haven't answered" is a row of grey chips, not a sentence; "Dashed names can't do that night" is gone
-- [ ] The settled month folds to one line with the viewer's going state and expands on tap; the night can still be tapped there to change going
-- [ ] Months after the open one fold to a single "January and beyond" line that expands
-- [ ] "In the running" lists every night that ties for the lead, and its cards do not look like buttons (or tapping one scrolls to that night)
-- [ ] "Tap the evenings you can do. A letter does the whole column." is removed; the column letters have a tappable style
-- [ ] The weekday "Every Mon…" row sits inside the month it applies to
-- [ ] Taps still save instantly with no Save button
+- [x] Opening Dates, or tapping the Dinner strip, lands with the open month's grid in view and nothing above it but the folded settled month
+- [x] The open month's headline is "<night> leads · N of M · names", updating live as taps land
+- [x] Each night shows one number (how many are free) or nothing; the viewer's own free nights are filled amber; the leading night is outlined
+- [x] "haven't answered" is a row of grey chips, not a sentence; "Dashed names can't do that night" is gone
+- [x] The settled month folds to one line with the viewer's going state and expands on tap; the night can still be tapped there to change going
+- [x] Months after the open one fold to a single "January and beyond" line that expands
+- [x] "In the running" lists every night that ties for the lead, and its cards do not look like buttons (or tapping one scrolls to that night)
+- [x] "Tap the evenings you can do. A letter does the whole column." is removed; the column letters have a tappable style
+- [x] The weekday "Every Mon…" row sits inside the month it applies to
+- [x] Taps still save instantly with no Save button

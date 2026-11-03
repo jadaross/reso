@@ -1,11 +1,26 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import { daysOnWeekday, daysWithin, monthsAhead, monthsShown } from "./year";
-import { announcementText, bookingLine, formatHeaderSlot, guestsPhrase } from "./announcement";
+import {
+  daysOnWeekday,
+  daysWithin,
+  monthsAhead,
+  monthsShown,
+  partitionDatesMonths,
+} from "./year";
+import {
+  announcementText,
+  beyondLabel,
+  bookingLine,
+  formatHeaderSlot,
+  goingMarkFor,
+  guestsPhrase,
+  leadHeadline,
+  settledFoldLine,
+} from "./announcement";
 import { bookingFits, guestsGoing, headcount, memberOnDate } from "./booking";
 import { narrowToFree } from "./candidates";
-import { computeChosenDate } from "./chosen-date";
+import { computeChosenDate, tiedForLead } from "./chosen-date";
 import {
   addMonths,
   calendarGrid,
@@ -171,6 +186,27 @@ describe("chosen date", () => {
     assert.equal(result.chosenDate, null);
     assert.equal(result.count, 0);
     assert.equal(result.quorumMet, false);
+  });
+
+  it("lists every night tied for the lead, and still offers an Admin only three", () => {
+    // Monday 7, Tuesday 8, Wednesday 9 and Saturday 12 December 2026.
+    // Four nights share the lead. Close Day still prefers the Saturday, but
+    // the other three stay in the running. The Admin override keeps its three.
+    const december = daysInMonth("2026-12-01");
+    const days = ["2026-12-07", "2026-12-08", "2026-12-09", "2026-12-12"];
+    const availability = days.flatMap((day) =>
+      ["jack", "lottie", "sienna"].map((memberId) => ({ memberId, day })),
+    );
+
+    assert.deepEqual(
+      tiedForLead(december, availability).map((tally) => tally.day),
+      ["2026-12-12", "2026-12-07", "2026-12-08", "2026-12-09"],
+    );
+    assert.equal(computeChosenDate(december, availability).topDays.length, 3);
+    assert.equal(
+      computeChosenDate(december, availability).chosenDate,
+      "2026-12-12",
+    );
   });
 
   it("ignores days outside the Outing's month", () => {
@@ -394,6 +430,76 @@ describe("the year ahead", () => {
     ]);
     // Sunday is 0, and November 2026 starts on one.
     assert.equal(daysOnWeekday("2026-11-01", 0)[0], "2026-11-01");
+  });
+
+  it("opens on the month that is taking dates, with the settled month before it", () => {
+    const parts = partitionDatesMonths(
+      [
+        { month: "2026-11-01", state: "announced" },
+        { month: "2026-12-01", state: "open" },
+        { month: "2027-01-01", state: "ahead" },
+        { month: "2027-02-01", state: "ahead" },
+      ],
+      "2026-12-01",
+    );
+    assert.deepEqual(
+      parts.before.map((month) => month.month),
+      ["2026-11-01"],
+    );
+    assert.equal(parts.current?.month, "2026-12-01");
+    assert.deepEqual(
+      parts.after.map((month) => month.month),
+      ["2027-01-01", "2027-02-01"],
+    );
+    assert.equal(beyondLabel("2027-01-01"), "January and beyond");
+  });
+
+  it("states the leading night with the count and the names", () => {
+    assert.equal(
+      leadHeadline("2026-12-12", 3, 6, ["Jack", "Lottie", "Sienna"]),
+      "Sat 12 Dec leads · 3 of 6 · Jack, Lottie, Sienna",
+    );
+  });
+
+  it("folds a settled month to one line with the viewer's going state", () => {
+    assert.equal(
+      settledFoldLine({
+        month: "2026-11-01",
+        chosenDate: "2026-11-14",
+        place: "Smoking Goat",
+        going: "going",
+      }),
+      "November · Sat 14 · Smoking Goat · Going ✓",
+    );
+    assert.equal(
+      settledFoldLine({
+        month: "2026-11-01",
+        chosenDate: "2026-11-14",
+        place: "Smoking Goat",
+        going: goingMarkFor(["2026-11-02"], "2026-11-14", "announced"),
+      }),
+      "November · Sat 14 · Smoking Goat · Can’t",
+    );
+    assert.equal(
+      settledFoldLine({
+        month: "2026-11-01",
+        chosenDate: "2026-11-14",
+        place: null,
+        going: goingMarkFor([], "2026-11-14", "announced"),
+      }),
+      "November · Sat 14",
+    );
+    assert.equal(goingMarkFor(["2026-11-14"], "2026-11-14", "announced"), "going");
+    assert.equal(goingMarkFor([], "2026-11-14", "done", true), "went");
+    assert.equal(
+      settledFoldLine({
+        month: "2026-11-01",
+        chosenDate: "2026-11-14",
+        place: "Smoking Goat",
+        going: "went",
+      }),
+      "November · Sat 14 · Smoking Goat · Went ✓",
+    );
   });
 
   it("keeps only days that belong to the month, once each, in order", () => {

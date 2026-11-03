@@ -31,6 +31,35 @@ export function computeChosenDate(
   candidateDays: DayString[],
   availability: AvailabilityEntry[],
 ): ChosenDateResult {
+  const tallies = rankDays(candidateDays, availability);
+  const best = tallies[0];
+  return {
+    chosenDate: best?.day ?? null,
+    count: best?.count ?? 0,
+    topDays: tallies.slice(0, 3),
+    quorumMet: (best?.count ?? 0) >= QUORUM,
+  };
+}
+
+/**
+ * Every night tied for the most Members, in the order Close Day would break
+ * the tie. The first is the night that leads. The rest are still in the
+ * running — a four-way tie is four nights, not the three an Admin is offered.
+ */
+export function tiedForLead(
+  candidateDays: DayString[],
+  availability: AvailabilityEntry[],
+): DayTally[] {
+  const tallies = rankDays(candidateDays, availability);
+  const best = tallies[0];
+  if (!best) return [];
+  return tallies.filter((tally) => tally.count === best.count);
+}
+
+function rankDays(
+  candidateDays: DayString[],
+  availability: AvailabilityEntry[],
+): DayTally[] {
   const allowed = new Set(candidateDays);
   const byDay = new Map<DayString, Set<string>>();
 
@@ -49,14 +78,7 @@ export function computeChosenDate(
     .filter((tally) => tally.count > 0);
 
   tallies.sort(compareDays);
-
-  const best = tallies[0];
-  return {
-    chosenDate: best?.day ?? null,
-    count: best?.count ?? 0,
-    topDays: tallies.slice(0, 3),
-    quorumMet: (best?.count ?? 0) >= QUORUM,
-  };
+  return tallies;
 }
 
 function compareDays(a: DayTally, b: DayTally): number {
